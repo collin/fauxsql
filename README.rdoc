@@ -1,6 +1,33 @@
 = fauxsql
 
-Description goes here.
+It's a little api for DataMapper records.
+
+    class FauxSqlObject
+      include DataMapper::Resource
+      include Fauxsql
+      
+      property :id, Serial
+    end
+    
+Fauxsql adds its own property.
+
+    property :fauxsql_attributes, Object
+
+To specify the specific fauxsql attributes use this api:
+
+    attribute :secret_power
+
+If you want to have an attribute that is an Array or a Hash, use these:
+
+    list :awesome_things
+    map :dictionary
+
+That's the basics. Under the hood most of the serializing/deserializing
+is left up to DataMapper. However, Fauxsql steps in for special cases.
+
+Right now the only special case is when you set a DataMapper record as an 
+attribute, member of a list, key in a map, or a value in a map. In this case
+Fauxsql transparently wraps the record in a DereferencedAttribute class.
 
 == Note on Patches/Pull Requests
  
