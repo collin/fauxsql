@@ -1,4 +1,3 @@
-== WARNING: THIS IS CONCEPT CODE. HAS NOT YET BEEN RUN THROUH A RUBY INTERPRETER
 = fauxsql
 
 It's a little api for DataMapper records.

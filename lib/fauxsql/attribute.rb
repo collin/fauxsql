@@ -3,7 +3,7 @@ module Fauxsql
   # It should be mixed into classes that inherit standard Ruby data structures
   module Attribute
     def initialize(record, name)
-      super
+      super() # explicitly super without arguments to preserve base behavior
       record.fauxsql_attributes[name] = self
     end
   end

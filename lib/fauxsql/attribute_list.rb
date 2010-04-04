@@ -11,5 +11,17 @@ module Fauxsql
     def [] index
       Fauxsql.resolve_fauxsql_attribute super(index)
     end
+    
+    def equals list
+      map_resolved == list
+    end
+    
+    def map_resolved
+      map = []
+      each_with_index do |item, index| 
+        map[index] = self[index]
+      end
+      map
+    end    
   end
 end

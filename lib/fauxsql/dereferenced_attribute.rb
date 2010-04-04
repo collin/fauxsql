@@ -10,7 +10,11 @@ module Fauxsql
     end
     
     def resolve
-      @klass.get(@lookup_key)
+      @klass.get(*@lookup_key)
+    end
+    
+    def hash
+      [@klass, @lookup_key].to_s
     end
   end
 end
