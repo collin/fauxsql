@@ -12,6 +12,18 @@ module Fauxsql
       Fauxsql.resolve_fauxsql_attribute super(index)
     end
     
+    def first
+      self[0]
+    end
+    
+    def last
+      self[length - 1]
+    end
+    
+    def each
+      map_resolved.each { |resolved| yield resolved }
+    end
+    
     def equals list
       map_resolved == list
     end
