@@ -19,11 +19,7 @@ module Fauxsql
     def last
       self[length - 1]
     end
-    
-    def each
-      map_resolved.each { |resolved| yield resolved }
-    end
-    
+        
     def equals list
       map_resolved == list
     end
