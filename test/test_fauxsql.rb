@@ -123,5 +123,16 @@ class TestFauxsql < Test::Unit::TestCase
       reload
       assert_equal simple2, @faux.dictionary[simple1]
     end
+    
+    should "give records as keys/values when calling #each" do
+      simple1 = SimpleKey.create
+      simple2 = SimpleKey.create
+      @faux.dictionary[simple1] = simple2
+      reload
+      @faux.dictionary.each do |key, value|
+        assert_equal simple1, key
+        assert_equal simple2, value
+      end
+    end
   end
 end

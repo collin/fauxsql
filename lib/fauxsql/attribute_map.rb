@@ -17,15 +17,25 @@ module Fauxsql
       Fauxsql.resolve_fauxsql_attribute super(real_key.hash)
     end
     
+    def each(&block)
+      super do |key, value|
+        yield(resolve_key(key).resolve, value.resolve)
+      end
+    end
+    
     # VERY VERY SPECIFIC to the marshal dump format.
     # Probably brittle.
     def keys
       super.map do |key|
-        if key.match(/^.+Fauxsql::DereferencedAttribute.+@klass.+@lookup_key.+$/)
-          Fauxsql::DereferencedAttribute.load(key)
-        else
-          key
-        end
+        resolve_key(key)
+      end
+    end
+    
+    def resolve_key(key)
+      if key.match(/^.+Fauxsql::DereferencedAttribute.+@klass.+@lookup_key.+$/)
+        Fauxsql::DereferencedAttribute.load(key)
+      else
+        key
       end
     end
   end
