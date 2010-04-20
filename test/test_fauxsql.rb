@@ -142,7 +142,7 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.dictionary.each{|key, value| }
       assert true, "choked on normal values in #each"
     end
-    
+
     should "persist changes to maps" do
       simple1 = SimpleKey.create
       @faux.dictionary[simple1] = 33
@@ -151,7 +151,18 @@ class TestFauxsql < Test::Unit::TestCase
       reload
       assert_equal 50, @faux.dictionary[simple1]
     end
-    
+
+    should "persist changes to lists" do
+      has_fauxsql = OtherFauxObject.create
+      @faux.things << :hello
+      @faux.things << has_fauxsql
+      @faux.things << :goodbye
+      reload
+      @faux.things.clear
+      reload
+      assert_equal [], @faux.things.map_resolved
+    end
+  
     should "delete items from maps" do
       simple1 = SimpleKey.create
       @faux.dictionary[simple1] = 33

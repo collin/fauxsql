@@ -46,11 +46,10 @@ module Fauxsql
       Fauxsql.resolve_fauxsql_attribute value
     end
     
+    # Always being not eql is expensive
+    # TODO make this work without this hack
     def eql?(other)
       return false
-      raise [self, other.inspect].inspect
     end
-    
-    
   end
 end
