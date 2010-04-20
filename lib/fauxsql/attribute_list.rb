@@ -18,16 +18,20 @@ module Fauxsql
       self[length - 1]
     end
 
+    def all
+      map{|item| Fauxsql.resolve_fauxsql_attribute item }
+    end
+
     def equals list
       map_resolved == list
     end
-
-    def map_resolved
-      map = []
-      each_with_index do |item, index|
-        map[index] = self[index]
-      end
-      map
+    
+    def each
+      super{|item| yield(Fauxsql.resolve_fauxsql_attribute(item)) }
+    end
+    
+    def each_with_index
+      super{|item, index| yield(Fauxsql.resolve_fauxsql_attribute(item), index) }
     end
 
     # Always being not eql is expensive

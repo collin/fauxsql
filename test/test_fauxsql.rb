@@ -95,16 +95,28 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << simple
       @faux.things << :goodbye
       reload
-      assert_equal [:hello, simple, :goodbye], @faux.things.map_resolved
+      assert_equal [:hello, simple, :goodbye], @faux.things.all
     end
-    
+
     should "derefencenc and resolve fauxsql objects in lists" do
       has_fauxsql = OtherFauxObject.create
       @faux.things << :hello
       @faux.things << has_fauxsql
       @faux.things << :goodbye
       reload
-      assert_equal [:hello, has_fauxsql, :goodbye], @faux.things.map_resolved
+      assert_equal [:hello, has_fauxsql, :goodbye], @faux.things.all
+    end
+
+    should "derefencenc and resolve fauxsql objects in lists when calling each/each_with_index" do
+      has_fauxsql = OtherFauxObject.create
+      @faux.things << has_fauxsql
+      reload
+      @faux.things.each_with_index do |thing, index|
+        assert_equal has_fauxsql, thing
+      end
+      @faux.things.each do |thing|
+        assert_equal has_fauxsql, thing
+      end
     end
 
     should "derference and resolve dm objects with fauxsql in maps" do
@@ -160,7 +172,7 @@ class TestFauxsql < Test::Unit::TestCase
       reload
       @faux.things.clear
       reload
-      assert_equal [], @faux.things.map_resolved
+      assert_equal [], @faux.things.all
     end
   
     should "delete items from maps" do
