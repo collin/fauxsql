@@ -11,31 +11,31 @@ module Fauxsql
     #     set_fauxsql_attribute(:power, value)
     #   end
     def attribute(attribute_name)
-      class_eval <<EORUBY                                                    
-        def #{attribute_name}                                                   
-          get_fauxsql_attribute(:#{attribute_name})                             
-        end                                                                     
+      class_eval <<EORUBY
+        def #{attribute_name}
+          get_fauxsql_attribute(:#{attribute_name})
+        end
 
-        def #{attribute_name}=(value)                                           
-          set_fauxsql_attribute(:#{attribute_name}, value)                      
-        end                                                                     
+        def #{attribute_name}=(value)
+          set_fauxsql_attribute(:#{attribute_name}, value)
+        end
 EORUBY
     end
 
-    # DSL method to define a named Fauxsql list 
+    # DSL method to define a named Fauxsql list
     #
     # calling with 'squad_members' is like writing:
     #   def squad_members
     #     get_fauxsql_list(:squad_members)
-    #   end                                           
+    #   end
     def list(attribute_name)
-      class_eval <<EORUBY                                                    
-        def #{attribute_name}                                                   
-          get_fauxsql_list(:#{attribute_name})                                  
-        end                                                                     
+      class_eval <<EORUBY
+        def #{attribute_name}
+          get_fauxsql_list(:#{attribute_name})
+        end
 EORUBY
     end
-  
+
     # DSL method to define a named Fauxsql map
     #
     # calling with 'mitigates' is like writing:
@@ -43,10 +43,10 @@ EORUBY
     #     get_fauxsql_map(:mitigates)
     #   end
     def map(attribute_name)
-      class_eval <<EORUBY                                                    
-        def #{attribute_name}                                                   
-          get_fauxsql_map(:#{attribute_name})                                   
-        end                                                                     
+      class_eval <<EORUBY
+        def #{attribute_name}
+          get_fauxsql_map(:#{attribute_name})
+        end
 EORUBY
     end
   end

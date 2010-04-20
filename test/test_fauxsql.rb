@@ -119,7 +119,7 @@ class TestFauxsql < Test::Unit::TestCase
       simple1 = SimpleKey.create
       simple2 = SimpleKey.create
       @faux.dictionary[simple1] = simple2
-      assert_equal simple2, @faux.dictionary[simple1]
+      assert_equal Fauxsql::DereferencedAttribute, @faux.dictionary.keys.first.class
       reload
       assert_equal simple2, @faux.dictionary[simple1]
     end

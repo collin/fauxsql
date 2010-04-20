@@ -13,8 +13,13 @@ module Fauxsql
       @klass.get(*@lookup_key)
     end
     
-    def hash
-      [@klass, @lookup_key].to_s
+    def dump
+      Marshal.dump(self)
+    end
+    alias hash dump
+    
+    def self.load(dump)
+      Marshal.load(dump)
     end
   end
 end

@@ -15,6 +15,18 @@ module Fauxsql
     def [] key
       real_key = Fauxsql.dereference_fauxsql_attribute(key)
       Fauxsql.resolve_fauxsql_attribute super(real_key.hash)
-    end    
+    end
+    
+    # VERY VERY SPECIFIC to the marshal dump format.
+    # Probably brittle.
+    def keys
+      super.map do |key|
+        if key.match(/^.+Fauxsql::DereferencedAttribute.+@klass.+@lookup_key.+$/)
+          Fauxsql::DereferencedAttribute.load(key)
+        else
+          key
+        end
+      end
+    end
   end
 end
