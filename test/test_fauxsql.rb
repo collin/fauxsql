@@ -55,7 +55,7 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << :hello
       @faux.things << :goodbye
       reload
-      assert_equal [:hello, :goodbye], @faux.things
+      assert @faux.things == [:hello, :goodbye]
     end
     
     should "persist maps" do
@@ -141,6 +141,15 @@ class TestFauxsql < Test::Unit::TestCase
       reload
       @faux.dictionary.each{|key, value| }
       assert true, "choked on normal values in #each"
+    end
+    
+    should "persist changes to maps" do
+      simple1 = SimpleKey.create
+      @faux.dictionary[simple1] = 33
+      reload
+      @faux.dictionary[simple1] = 50
+      reload
+      assert_equal 50, @faux.dictionary[simple1]
     end
   end
 end

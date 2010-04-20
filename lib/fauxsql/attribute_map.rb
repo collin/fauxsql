@@ -2,8 +2,6 @@ module Fauxsql
   # AttributeMap is an Hash that dereferences and resolves fauxsql attributes
   # when setting/reading members in the Hash
   class AttributeMap < Hash
-    include Attribute
-    
     # We dereference and resolve the key because in Ruby _any_ object
     # can be a hash key. Even a DataMapper record.
     def []= key, value
@@ -30,9 +28,9 @@ module Fauxsql
         resolve_key(key)
       end
     end
-    
+        
     def resolve_key(key)
-      if key.match(/^.+Fauxsql::DereferencedAttribute.+@klass.+@lookup_key.+$/)
+      if key.respond_to?(:match) && key.match(/^.+Fauxsql::DereferencedAttribute.+@klass.+@lookup_key.+$/)
         Fauxsql.resolve_fauxsql_attribute Fauxsql::DereferencedAttribute.load(key)
       else
         key
@@ -42,5 +40,12 @@ module Fauxsql
     def resolve_value(value)
       Fauxsql.resolve_fauxsql_attribute value
     end
+    
+    def eql?(other)
+      return false
+      raise [self, other.inspect].inspect
+    end
+    
+    
   end
 end

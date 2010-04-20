@@ -2,8 +2,6 @@ module Fauxsql
   # AttributeList is an Array that dereferences and resolves fauxsql attributes
   # when setting/reading members in the Array
   class AttributeList < Array
-    include Attribute
-    
     def <<(attribute)
       super Fauxsql.dereference_fauxsql_attribute(attribute)
     end

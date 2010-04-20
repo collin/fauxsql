@@ -6,9 +6,11 @@ require 'pathname'
 # Internal Libs
 root = Pathname.new(__FILE__).dirname.expand_path
 require root+'fauxsql/dereferenced_attribute'
-require root+'fauxsql/attribute'
 require root+'fauxsql/attribute_list'
 require root+'fauxsql/attribute_map'
+require root+'fauxsql/attribute_wrapper'
+require root+'fauxsql/map_wrapper'
+require root+'fauxsql/list_wrapper'
 require root+'fauxsql/dsl'
 module Fauxsql
   extend ActiveSupport::Concern
@@ -36,14 +38,16 @@ module Fauxsql
   # a Ruby Array. Except it uses Fauxsql's dereference and resolve strategy to
   # store members.
   def get_fauxsql_list(list_name)
-    fauxsql_attributes[list_name] or AttributeList.new(self, list_name)
+    list = fauxsql_attributes[list_name] || AttributeList.new
+    ListWrapper.new(list, self, list_name)
   end
 
   # Gets a reference to an AttributeMap object. AttributeMap quacks like
   # a Ruby Hash. Except it uses Fauxsql's dereference and resolve strategy to
   # store keys and values.  
   def get_fauxsql_map(map_name)
-    fauxsql_attributes[map_name] or AttributeMap.new(self, map_name)
+    map = fauxsql_attributes[map_name] || AttributeMap.new
+    MapWrapper.new(map, self,  map_name)
   end
 
   # When setting values, all attributes pass through this method.
@@ -51,7 +55,7 @@ module Fauxsql
   # See #resolve_fauxsql_attribute to see how attributes are read.
   def self.dereference_fauxsql_attribute(attribute)
     if attribute.is_a?(DataMapper::Resource)
-      DereferencedAttribute.new(attribute)
+      DereferencedAttribute.get(attribute)
     else
       attribute
     end
