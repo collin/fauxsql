@@ -19,7 +19,7 @@ module Fauxsql
     
     def each(&block)
       super do |key, value|
-        yield(resolve_key(key).resolve, value.resolve)
+        yield(resolve_key(key), resolve_value(value))
       end
     end
     
@@ -33,10 +33,14 @@ module Fauxsql
     
     def resolve_key(key)
       if key.match(/^.+Fauxsql::DereferencedAttribute.+@klass.+@lookup_key.+$/)
-        Fauxsql::DereferencedAttribute.load(key)
+        Fauxsql.resolve_fauxsql_attribute Fauxsql::DereferencedAttribute.load(key)
       else
         key
       end
+    end
+    
+    def resolve_value(value)
+      Fauxsql.resolve_fauxsql_attribute value
     end
   end
 end

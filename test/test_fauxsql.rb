@@ -119,7 +119,7 @@ class TestFauxsql < Test::Unit::TestCase
       simple1 = SimpleKey.create
       simple2 = SimpleKey.create
       @faux.dictionary[simple1] = simple2
-      assert_equal Fauxsql::DereferencedAttribute, @faux.dictionary.keys.first.class
+      assert_equal SimpleKey, @faux.dictionary.keys.first.class
       reload
       assert_equal simple2, @faux.dictionary[simple1]
     end
@@ -133,6 +133,14 @@ class TestFauxsql < Test::Unit::TestCase
         assert_equal simple1, key
         assert_equal simple2, value
       end
+    end
+    
+    should "not choke on normal values in hash when calling #each" do
+      simple1 = SimpleKey.create
+      @faux.dictionary[simple1] = 33
+      reload
+      @faux.dictionary.each{|key, value| }
+      assert true, "choked on normal values in #each"
     end
   end
 end
