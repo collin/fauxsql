@@ -15,6 +15,11 @@ module Fauxsql
       Fauxsql.resolve_fauxsql_attribute super(real_key.hash)
     end
     
+    def delete key
+      real_key = Fauxsql.dereference_fauxsql_attribute(key)
+      super(real_key.hash)
+    end
+    
     def each(&block)
       super do |key, value|
         yield(resolve_key(key), resolve_value(value))

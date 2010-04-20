@@ -151,5 +151,14 @@ class TestFauxsql < Test::Unit::TestCase
       reload
       assert_equal 50, @faux.dictionary[simple1]
     end
+    
+    should "delete items from maps" do
+      simple1 = SimpleKey.create
+      @faux.dictionary[simple1] = 33
+      reload
+      @faux.dictionary.delete(simple1)
+      reload
+      assert_equal nil, @faux.dictionary[simple1]
+    end
   end
 end

@@ -8,5 +8,9 @@ module Fauxsql
     def []=(key, value)
       dirty! { map[key] = value }
     end
+    
+    def delete(key)
+      dirty! { map.delete(key) }
+    end
   end
 end
