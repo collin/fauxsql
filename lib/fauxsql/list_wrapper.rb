@@ -8,5 +8,9 @@ module Fauxsql
     def <<(item)
       dirty! { list << item }
     end
+    
+    def clear
+      dirty! { list.clear }
+    end
   end
 end
