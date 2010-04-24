@@ -1,4 +1,4 @@
-require 'helper'
+require 'test/helper'
 
 class SimpleKey
   include DataMapper::Resource  
@@ -16,18 +16,19 @@ class FauxObject
   include Fauxsql
   
   property :id, Serial
-  
+  property :type, Discriminator
   attribute :name
   attribute :record
   list :things
   map :dictionary
 end
 
-DataMapper.auto_migrate!
+class OtherFauxObject < FauxObject; end
 
 class TestFauxsql < Test::Unit::TestCase
   context "A FauxObject" do
     setup do
+      DataMapper.auto_migrate!
       @faux = FauxObject.new
     end
     
@@ -54,7 +55,7 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << :hello
       @faux.things << :goodbye
       reload
-      assert_equal [:hello, :goodbye], @faux.things
+      assert @faux.things == [:hello, :goodbye]
     end
     
     should "persist maps" do
@@ -65,7 +66,14 @@ class TestFauxsql < Test::Unit::TestCase
       assert_equal 2, @faux.dictionary[:b]
     end
     
-    should "deference and resolve dm objects with simple keys" do
+    should "dereference and resolve objects that include Fauxsql" do
+      has_fauxsql = OtherFauxObject.create
+      @faux.record = has_fauxsql
+      reload
+      assert_equal has_fauxsql, @faux.record
+    end
+    
+    should "dereference and resolve dm objects with simple keys" do
       simple_key = SimpleKey.create
       @faux.record = simple_key
       reload
@@ -87,17 +95,93 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << simple
       @faux.things << :goodbye
       reload
-      assert_equal [:hello, simple, :goodbye], @faux.things.map_resolved
+      assert_equal [:hello, simple, :goodbye], @faux.things.all
     end
-    
+
+    should "derefencenc and resolve fauxsql objects in lists" do
+      has_fauxsql = OtherFauxObject.create
+      @faux.things << :hello
+      @faux.things << has_fauxsql
+      @faux.things << :goodbye
+      reload
+      assert_equal [:hello, has_fauxsql, :goodbye], @faux.things.all
+    end
+
+    should "derefencenc and resolve fauxsql objects in lists when calling each/each_with_index" do
+      has_fauxsql = OtherFauxObject.create
+      @faux.things << has_fauxsql
+      reload
+      @faux.things.each_with_index do |thing, index|
+        assert_equal has_fauxsql, thing
+      end
+      @faux.things.each do |thing|
+        assert_equal has_fauxsql, thing
+      end
+    end
+
+    should "derference and resolve dm objects with fauxsql in maps" do
+      has_fauxsql1 = OtherFauxObject.create
+      has_fauxsql2 = OtherFauxObject.create
+      @faux.dictionary[has_fauxsql1] = has_fauxsql2
+      reload
+      assert_equal has_fauxsql2, @faux.dictionary[has_fauxsql1]
+    end
+
     should "derference and resolve dm objects in maps" do
       simple1 = SimpleKey.create
       simple2 = SimpleKey.create
       @faux.dictionary[simple1] = simple2
-      assert_equal simple2, @faux.dictionary[simple1]
+      assert_equal SimpleKey, @faux.dictionary.keys.first.class
       reload
       assert_equal simple2, @faux.dictionary[simple1]
     end
-  end
+    
+    should "give records as keys/values when calling #each" do
+      simple1 = SimpleKey.create
+      simple2 = SimpleKey.create
+      @faux.dictionary[simple1] = simple2
+      reload
+      @faux.dictionary.each do |key, value|
+        assert_equal simple1, key
+        assert_equal simple2, value
+      end
+    end
+    
+    should "not choke on normal values in hash when calling #each" do
+      simple1 = SimpleKey.create
+      @faux.dictionary[simple1] = 33
+      reload
+      @faux.dictionary.each{|key, value| }
+      assert true, "choked on normal values in #each"
+    end
+
+    should "persist changes to maps" do
+      simple1 = SimpleKey.create
+      @faux.dictionary[simple1] = 33
+      reload
+      @faux.dictionary[simple1] = 50
+      reload
+      assert_equal 50, @faux.dictionary[simple1]
+    end
+
+    should "persist changes to lists" do
+      has_fauxsql = OtherFauxObject.create
+      @faux.things << :hello
+      @faux.things << has_fauxsql
+      @faux.things << :goodbye
+      reload
+      @faux.things.clear
+      reload
+      assert_equal [], @faux.things.all
+    end
   
+    should "delete items from maps" do
+      simple1 = SimpleKey.create
+      @faux.dictionary[simple1] = 33
+      reload
+      @faux.dictionary.delete(simple1)
+      reload
+      assert_equal nil, @faux.dictionary[simple1]
+    end
+  end
 end
