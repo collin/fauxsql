@@ -49,5 +49,18 @@ EORUBY
         end
 EORUBY
     end
+
+    # DSL method to define a named Fauxsql manymany relationship
+    #
+    # calling with 'friends' is like writing:
+    #   def friends
+    #     get_fauxsql_manymany(:friends, Other, :through => :friends)
+    #   end
+    def manymany(attribute_name, classes, options)
+      define_method attribute_name do
+        get_fauxsql_manymany(attribute_name, classes, options)        
+      end
+    end
+    
   end
 end

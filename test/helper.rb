@@ -10,8 +10,15 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'fauxsql'
 
 class Test::Unit::TestCase
-  def reload
-    @faux.save
-    @faux.reload
+  def checkpoint!
+    if @faux
+      @faux.save
+      @faux.reload
+    end
+    
+    if @other
+      @other.save
+      @other.reload
+    end
   end
 end

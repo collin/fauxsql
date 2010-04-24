@@ -20,7 +20,8 @@ module Fauxsql
     alias hash dump
     
     def self.get(attribute)
-      @@identity_map[attribute] ||= new(attribute)
+      dereferenced = new(attribute)
+      @@identity_map[dereferenced.hash] ||= dereferenced
     end
     
     def self.load(dump)

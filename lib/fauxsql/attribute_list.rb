@@ -34,6 +34,12 @@ module Fauxsql
       super{|item, index| yield(Fauxsql.resolve_fauxsql_attribute(item), index) }
     end
 
+    def -(others)
+      others = others.map{|other| Fauxsql.dereference_fauxsql_attribute(other).hash }
+      reject!{|one| others.include?(one.hash) }
+      self
+    end
+
     # Always being not eql is expensive
     # TODO make this work without this hack
     def eql?(other)

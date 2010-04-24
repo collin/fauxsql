@@ -1,4 +1,3 @@
-require "active_support/dependencies"
 require "active_support/core_ext/module/delegation"
 module Fauxsql
   class MapWrapper < AttributeWrapper

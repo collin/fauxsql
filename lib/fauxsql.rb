@@ -8,9 +8,11 @@ root = Pathname.new(__FILE__).dirname.expand_path
 require root+'fauxsql/dereferenced_attribute'
 require root+'fauxsql/attribute_list'
 require root+'fauxsql/attribute_map'
+require root+'fauxsql/attribute_manymany'
 require root+'fauxsql/attribute_wrapper'
 require root+'fauxsql/map_wrapper'
 require root+'fauxsql/list_wrapper'
+require root+'fauxsql/manymany_wrapper'
 require root+'fauxsql/dsl'
 module Fauxsql
   extend ActiveSupport::Concern
@@ -48,6 +50,11 @@ module Fauxsql
   def get_fauxsql_map(map_name)
     map = fauxsql_attributes[map_name] || AttributeMap.new
     MapWrapper.new(map, self,  map_name)
+  end
+
+  def get_fauxsql_manymany(manymany_name, classes, options)
+    manymany = fauxsql_attributes[manymany_name] || AttributeManymany.new
+    ManymanyWrapper.new(manymany, self, manymany_name, classes, options)
   end
 
   # When setting values, all attributes pass through this method.

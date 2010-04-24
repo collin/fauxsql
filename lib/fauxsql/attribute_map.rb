@@ -35,7 +35,7 @@ module Fauxsql
     end
         
     def resolve_key(key)
-      if key.respond_to?(:match) && key.match(/^.+Fauxsql::DereferencedAttribute.+@klass.+@lookup_key.+$/)
+      if key.respond_to?(:match) && key.match(/^.+Fauxsql::DereferencedAttribute.+@lookup_key.+$/)
         Fauxsql.resolve_fauxsql_attribute Fauxsql::DereferencedAttribute.load(key)
       else
         key

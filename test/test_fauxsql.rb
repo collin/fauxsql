@@ -21,6 +21,8 @@ class FauxObject
   attribute :record
   list :things
   map :dictionary
+  
+  manymany :others, FauxObject, :through => :others
 end
 
 class OtherFauxObject < FauxObject; end
@@ -47,21 +49,21 @@ class TestFauxsql < Test::Unit::TestCase
     
     should "persist attributes" do
       @faux.name = "MyName"
-      reload
+      checkpoint!
       assert_equal "MyName", @faux.name
     end
     
     should "persist lists" do
       @faux.things << :hello
       @faux.things << :goodbye
-      reload
+      checkpoint!
       assert @faux.things == [:hello, :goodbye]
     end
     
     should "persist maps" do
       @faux.dictionary[:a] = 1
       @faux.dictionary[:b] = 2
-      reload
+      checkpoint!
       assert_equal 1, @faux.dictionary[:a]
       assert_equal 2, @faux.dictionary[:b]
     end
@@ -69,14 +71,14 @@ class TestFauxsql < Test::Unit::TestCase
     should "dereference and resolve objects that include Fauxsql" do
       has_fauxsql = OtherFauxObject.create
       @faux.record = has_fauxsql
-      reload
+      checkpoint!
       assert_equal has_fauxsql, @faux.record
     end
     
     should "dereference and resolve dm objects with simple keys" do
       simple_key = SimpleKey.create
       @faux.record = simple_key
-      reload
+      checkpoint!
       assert @faux.fauxsql_attributes[:record].is_a?(Fauxsql::DereferencedAttribute)
       assert_equal simple_key, @faux.record
     end
@@ -84,7 +86,7 @@ class TestFauxsql < Test::Unit::TestCase
     should "deference and resolve dm objects with complex keys" do
       complex_key = ComplexKey.create(:string => "string", :integer => 1)
       @faux.record = complex_key
-      reload
+      checkpoint!
       assert @faux.fauxsql_attributes[:record].is_a?(Fauxsql::DereferencedAttribute)
       assert_equal complex_key, @faux.record
     end
@@ -94,7 +96,7 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << :hello
       @faux.things << simple
       @faux.things << :goodbye
-      reload
+      checkpoint!
       assert_equal [:hello, simple, :goodbye], @faux.things.all
     end
 
@@ -103,14 +105,14 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << :hello
       @faux.things << has_fauxsql
       @faux.things << :goodbye
-      reload
+      checkpoint!
       assert_equal [:hello, has_fauxsql, :goodbye], @faux.things.all
     end
 
     should "derefencenc and resolve fauxsql objects in lists when calling each/each_with_index" do
       has_fauxsql = OtherFauxObject.create
       @faux.things << has_fauxsql
-      reload
+      checkpoint!
       @faux.things.each_with_index do |thing, index|
         assert_equal has_fauxsql, thing
       end
@@ -123,7 +125,7 @@ class TestFauxsql < Test::Unit::TestCase
       has_fauxsql1 = OtherFauxObject.create
       has_fauxsql2 = OtherFauxObject.create
       @faux.dictionary[has_fauxsql1] = has_fauxsql2
-      reload
+      checkpoint!
       assert_equal has_fauxsql2, @faux.dictionary[has_fauxsql1]
     end
 
@@ -132,7 +134,7 @@ class TestFauxsql < Test::Unit::TestCase
       simple2 = SimpleKey.create
       @faux.dictionary[simple1] = simple2
       assert_equal SimpleKey, @faux.dictionary.keys.first.class
-      reload
+      checkpoint!
       assert_equal simple2, @faux.dictionary[simple1]
     end
     
@@ -140,7 +142,7 @@ class TestFauxsql < Test::Unit::TestCase
       simple1 = SimpleKey.create
       simple2 = SimpleKey.create
       @faux.dictionary[simple1] = simple2
-      reload
+      checkpoint!
       @faux.dictionary.each do |key, value|
         assert_equal simple1, key
         assert_equal simple2, value
@@ -150,7 +152,7 @@ class TestFauxsql < Test::Unit::TestCase
     should "not choke on normal values in hash when calling #each" do
       simple1 = SimpleKey.create
       @faux.dictionary[simple1] = 33
-      reload
+      checkpoint!
       @faux.dictionary.each{|key, value| }
       assert true, "choked on normal values in #each"
     end
@@ -158,9 +160,9 @@ class TestFauxsql < Test::Unit::TestCase
     should "persist changes to maps" do
       simple1 = SimpleKey.create
       @faux.dictionary[simple1] = 33
-      reload
+      checkpoint!
       @faux.dictionary[simple1] = 50
-      reload
+      checkpoint!
       assert_equal 50, @faux.dictionary[simple1]
     end
 
@@ -169,19 +171,46 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << :hello
       @faux.things << has_fauxsql
       @faux.things << :goodbye
-      reload
+      checkpoint!
       @faux.things.clear
-      reload
+      checkpoint!
       assert_equal [], @faux.things.all
     end
   
     should "delete items from maps" do
       simple1 = SimpleKey.create
       @faux.dictionary[simple1] = 33
-      reload
+      checkpoint!
       @faux.dictionary.delete(simple1)
-      reload
+      checkpoint!
       assert_equal nil, @faux.dictionary[simple1]
+    end
+    
+    context "with a manymany relationship" do
+      setup do
+        @faux =  FauxObject.create!
+        @other = FauxObject.create!
+        @faux.others << @other
+        checkpoint!
+      end
+      
+      should "associate manymany relationships" do
+        assert_equal [@faux], @other.others.all # LOL "LOST" JOKE
+        assert_equal [@other], @faux.others.all
+      end
+    
+      should "delete from manymany relationships" do
+        third = FauxObject.create
+        @faux.others << third
+        checkpoint!
+        @faux.others.delete(@other)
+        checkpoint!
+        third.save; third.reload
+        assert_equal [third], @faux.others.all
+        assert_equal [], @other.others.all
+      end
+      
+      # TODO think about paranoid deletion
     end
   end
 end
