@@ -43,7 +43,8 @@ EORUBY
     #   def mitigates
     #     get_fauxsql_map(:mitigates)
     #   end
-    def map(attribute_name)
+    def map(attribute_name, options={})
+      fauxsql_options[attribute_name] = options
       class_eval <<EORUBY
         def #{attribute_name}
           get_fauxsql_map(:#{attribute_name})

@@ -22,6 +22,7 @@ class FauxObject
   attribute :number, :type => :to_i
   list :things
   map :dictionary
+  map :numbers, :value_type => :to_i
   
   manymany :others, FauxObject, :through => :others
 end
@@ -187,16 +188,16 @@ class TestFauxsql < Test::Unit::TestCase
       assert_equal nil, @faux.dictionary[simple1]
     end
     
-    should "obey typecasting directives" do
+    should "obey typecasting directives for attributes" do
       @faux.number = "33"
       checkpoint!
       assert_equal 33, @faux.number
     end
     
-    should "not allow invalid numbers" do
-      @faux.number = "kitty"
+    should "obey typecasting directives for map values" do
+      @faux.numbers[:a] = "400"
       checkpoint!
-      assert_equal nil, @faux.number
+      assert_equal 400, @faux.numbers[:a]
     end
     
     context "with a manymany relationship" do

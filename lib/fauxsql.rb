@@ -57,7 +57,7 @@ module Fauxsql
   # store keys and values.  
   def get_fauxsql_map(map_name)
     map = fauxsql_attributes[map_name] || AttributeMap.new
-    MapWrapper.new(map, self,  map_name)
+    MapWrapper.new(map, self,  map_name, fauxsql_options[map_name])
   end
 
   def get_fauxsql_manymany(manymany_name, classes, options)

@@ -4,9 +4,10 @@ module Fauxsql
     attr_reader:attribute
     attr_reader:record
     attr_reader:name
+    attr_reader:options
     
-    def initialize(attribute, record, name)
-      @attribute, @record, @name = attribute, record, name
+    def initialize(attribute, record, name, options={})
+      @attribute, @record, @name, @options = attribute, record, name, options
       @record.fauxsql_attributes[name] ||= attribute
     end
 
