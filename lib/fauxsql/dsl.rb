@@ -10,7 +10,8 @@ module Fauxsql
     #   def power=(value)
     #     set_fauxsql_attribute(:power, value)
     #   end
-    def attribute(attribute_name)
+    def attribute(attribute_name, options={})
+      fauxsql_options[attribute_name] = options
       class_eval <<EORUBY
         def #{attribute_name}
           get_fauxsql_attribute(:#{attribute_name})

@@ -20,18 +20,26 @@ module Fauxsql
   included do
     property :fauxsql_attributes, Object, :default => {}
     extend Fauxsql::DSL
+    cattr_accessor :fauxsql_options
+    self.fauxsql_options = {}
   end
   
   # Getter method for attributes defined as:
   #   attribute :attribute_name
   def get_fauxsql_attribute(attribute_name)
     attribute = fauxsql_attributes[attribute_name]
-    Fauxsql.resolve_fauxsql_attribute(attribute)
+    value = Fauxsql.resolve_fauxsql_attribute(attribute)
+
+    options = fauxsql_options[attribute_name]
+    options and options[:type] ? value.send(options[:type]) : value
   end
 
   # Setter method for attributes defined as:
   #   attribute :attribute_name
   def set_fauxsql_attribute(attribute_name, value)
+    options = fauxsql_options[attribute_name]
+    value = value.send(options[:type]) if options and options[:type]
+    
     attribute = Fauxsql.dereference_fauxsql_attribute(value)
     fauxsql_attributes[attribute_name] = attribute
   end

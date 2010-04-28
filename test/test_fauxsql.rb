@@ -19,6 +19,7 @@ class FauxObject
   property :type, Discriminator
   attribute :name
   attribute :record
+  attribute :number, :type => :to_i
   list :things
   map :dictionary
   
@@ -184,6 +185,18 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.dictionary.delete(simple1)
       checkpoint!
       assert_equal nil, @faux.dictionary[simple1]
+    end
+    
+    should "obey typecasting directives" do
+      @faux.number = "33"
+      checkpoint!
+      assert_equal 33, @faux.number
+    end
+    
+    should "not allow invalid numbers" do
+      @faux.number = "kitty"
+      checkpoint!
+      assert_equal nil, @faux.number
     end
     
     context "with a manymany relationship" do
