@@ -7,12 +7,12 @@ module Fauxsql
   class DereferencedAttribute
     @@identity_map = {}
     def initialize(attribute)
-      @klass      = attribute.class
+      @klass      = attribute.class.to_s
       @lookup_key = attribute.key
     end
     
     def resolve
-      ActiveSupport::Inflector.constantize(@klass).get(*@lookup_key)
+      ActiveSupport::Inflector.constantize(@klass.to_s).get(*@lookup_key)
     end
     
     def dump
