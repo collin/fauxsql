@@ -17,14 +17,14 @@ class FauxObject
   
   property :id, Serial
   property :type, Discriminator
-  attribute :name
+  attribute :name, :nest => [FauxObject]
   attribute :record
   attribute :number, :type => :to_i
-  list :things
-  map :dictionary
+  list :things, :nest => [FauxObject]
+  map :dictionary, :nest => [FauxObject]
   map :numbers, :value_type => :to_i
   
-  manymany :others, FauxObject, :through => :others
+  manymany :others, FauxObject, :through => :others, :nest => true
 end
 
 class OtherFauxObject < FauxObject; end
@@ -200,6 +200,34 @@ class TestFauxsql < Test::Unit::TestCase
       assert_equal 400, @faux.numbers[:a]
     end
     
+    should "obey typecasting directives for map keys" do
+      assert false
+    end
+    
+    should "obey typecasting directives for list items" do
+      assert false
+    end
+    
+    context "with :nested => true" do
+      context "on a map" do
+        should "accept nested attributes" do
+          assert false
+        end
+      end
+
+      context "on a list" do
+        should "accept nested attributes" do
+          assert false
+        end        
+      end
+      
+      context "on an attribute" do
+        should "accept nested attributes" do
+          assert false
+        end
+      end
+    end
+        
     context "with a manymany relationship" do
       setup do
         @faux =  FauxObject.create!
@@ -225,6 +253,10 @@ class TestFauxsql < Test::Unit::TestCase
       end
       
       # TODO think about paranoid deletion
+    end
+    
+    should "allow changing of hash key when key is record" do
+      assert false
     end
   end
 end
