@@ -71,7 +71,7 @@ EORUBY
         def #{map_name}=(attrs)
           #{map_name}.clear
           attrs.each do |index, vals|
-            record = #{model.to_s}.get(vals["#{model.name.split("::").underscore}_id"])
+            record = #{model.to_s}.get(vals["#{basename}_id"])
             #{map_name} << record if record unless vals[:_delete] == "1" # Rails forms spit out 1 or 0 :)
           end
         end
@@ -84,7 +84,7 @@ EORUBY
         def #{map_name}=(attrs)
           deletes = []
           attrs.each do |index, vals|
-            key = #{model.to_s}.get(vals["#{model.name.split("::").underscore}_id"])
+            key = #{model.to_s}.get(vals["#{basename}_id"])
             #{map_name}[key] = vals[:value]
             deletes << key if vals[:_delete] == "1" # Rails forms spit out 1 or 0 :)
           end
