@@ -6,6 +6,7 @@ require 'pathname'
 # Internal Libs
 root = Pathname.new(__FILE__).dirname.expand_path
 require root+'fauxsql/dereferenced_attribute'
+require root+'fauxsql/attributes'
 require root+'fauxsql/attribute_list'
 require root+'fauxsql/attribute_map'
 require root+'fauxsql/attribute_manymany'
@@ -18,7 +19,7 @@ module Fauxsql
   extend ActiveSupport::Concern
   
   included do
-    property :fauxsql_attributes, Object, :default => {}
+    property :fauxsql_attributes, Object, :default => lambda{|*| Fauxsql::Attributes.new }
     extend Fauxsql::DSL
     cattr_accessor :fauxsql_options
     self.fauxsql_options = {}
@@ -41,7 +42,7 @@ module Fauxsql
     value = value.send(options[:type]) if options and options[:type]
     
     attribute = Fauxsql.dereference_fauxsql_attribute(value)
-    fauxsql_attributes[attribute_name] = attribute
+    Fauxsql.dirty!(self){ fauxsql_attributes[attribute_name] = attribute }    
   end
   
   # Gets a reference to an AttributeList object. AttributeList quacks like
@@ -85,5 +86,12 @@ module Fauxsql
     else
       attribute
     end
+  end
+  
+  def self.dirty!(record)
+    record.attribute_set(:fauxsql_attributes, record.fauxsql_attributes.dup)
+    value = yield
+    record.attribute_set(:fauxsql_attributes, record.fauxsql_attributes)
+    value
   end
 end

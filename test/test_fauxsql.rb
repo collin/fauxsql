@@ -55,6 +55,14 @@ class TestFauxsql < Test::Unit::TestCase
       assert_equal "MyName", @faux.name
     end
     
+    should "update attributes" do
+      @faux.name = "AName"
+      checkpoint!
+      @faux.name = "OtherName"
+      checkpoint!
+      assert_equal "OtherName", @faux.name
+    end
+    
     should "persist lists" do
       @faux.things << :hello
       @faux.things << :goodbye
