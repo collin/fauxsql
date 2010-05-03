@@ -1,3 +1,4 @@
+require "active_support/inflector"
 module Fauxsql
   # DereferencedAttribute stores objects that quack like DataMapper::Resource
   # This is the object that Fauxsql stores in the database when a 
@@ -6,12 +7,12 @@ module Fauxsql
   class DereferencedAttribute
     @@identity_map = {}
     def initialize(attribute)
-      @klass      = attribute.class
+      @klass      = attribute.class.to_s
       @lookup_key = attribute.key
     end
     
     def resolve
-      @klass.get(*@lookup_key)
+      ActiveSupport::Inflector.constantize(@klass.to_s).get(*@lookup_key)
     end
     
     def dump
