@@ -12,10 +12,7 @@ module Fauxsql
     end
 
     def dirty!
-      record.attribute_set(:fauxsql_attributes, record.fauxsql_attributes.dup)
-      value = yield
-      record.attribute_set(:fauxsql_attributes, record.fauxsql_attributes)
-      value
+      Fauxsql.dirty!(record){ yield }
     end
   end
 end
