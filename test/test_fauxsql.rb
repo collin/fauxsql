@@ -234,5 +234,13 @@ class TestFauxsql < Test::Unit::TestCase
       
       # TODO think about paranoid deletion
     end
+    
+    should "return keys for dictionary stores" do
+      @faux.dictionary['a'] = 1
+      @faux.dictionary['b'] = 1
+      @faux.dictionary['c'] = 1
+      checkpoint!
+      assert_equal ['a', 'b', 'c'], @faux.dictionary.keys
+    end
   end
 end

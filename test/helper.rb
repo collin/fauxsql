@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
-
+require 'dm-core'
 require 'datamapper'
 DataMapper.setup(:default, "sqlite3://:memory:")
 
