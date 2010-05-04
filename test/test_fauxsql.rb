@@ -266,5 +266,13 @@ class TestFauxsql < Test::Unit::TestCase
     should "allow changing of hash key when key is record" do
       assert false
     end
+    
+    should "return keys for dictionary stores" do
+      @faux.dictionary['a'] = 1
+      @faux.dictionary['b'] = 1
+      @faux.dictionary['c'] = 1
+      checkpoint!
+      assert_equal ['a', 'b', 'c'], @faux.dictionary.keys
+    end
   end
 end

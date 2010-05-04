@@ -19,7 +19,11 @@ module Fauxsql
   extend ActiveSupport::Concern
   
   included do
-    property :fauxsql_attributes, Object, :default => lambda{|*| Fauxsql::Attributes.new }
+    # Property is lazy. Benchmark for lazy loading shows
+    # performance is up to 5x slower when accessing fauxsql attributes.
+    property :fauxsql_attributes, Object, 
+      :default => lambda{|*| Fauxsql::Attributes.new },
+      :lazy => false
     extend Fauxsql::DSL
     cattr_accessor :fauxsql_options
     self.fauxsql_options = {}
