@@ -18,5 +18,5 @@ gem 'dm-validations',                      :git => 'git://github.com/datamapper/
 gem 'dm-aggregates',                       :git => 'git://github.com/datamapper/dm-aggregates.git'
 gem 'dm-constraints',                      :git => 'git://github.com/datamapper/dm-constraints.git'
 gem 'dm-observer',                         :git => 'git://github.com/datamapper/dm-observer.git'
-gem "dm-core",                             :git => "git://github.com/collin/dm-core.git", "branch" => "next"
+gem "dm-core",                             :git => "git://github.com/datamapper/dm-core.git", "branch" => "next"
 gem "datamapper"
