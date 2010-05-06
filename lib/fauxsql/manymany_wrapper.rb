@@ -9,7 +9,7 @@ module Fauxsql
     delegate :-, :[], :==, :first, :last, :each, :each_with_index, :map, :all, :equals, :to => :list
     
     def initialize(attribute, record, name, *classes)
-      super(attribute, record, name)
+      super(attribute, record, name, {})
       options = classes.extract_options!
       raise ThroughOptionMissing unless options[:through]
       @classes, @through = classes, options[:through]

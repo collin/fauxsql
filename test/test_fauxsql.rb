@@ -17,14 +17,14 @@ class FauxObject
   
   property :id, Serial
   property :type, Discriminator
-  attribute :name, :nest => [FauxObject]
-  attribute :record
+  attribute :name
+  attribute :record, :nest => FauxObject
   attribute :number, :type => :to_i
-  list :things, :nest => [FauxObject]
-  map :dictionary, :nest => [FauxObject]
+  list :things, :nest => FauxObject
+  map :dictionary, :nest => FauxObject
   map :numbers, :value_type => :to_i
   
-  manymany :others, FauxObject, :through => :others, :nest => true
+  manymany :others, FauxObject, :through => :others#, :nest => true TODO implement nesting on manymany
 end
 
 class OtherFauxObject < FauxObject; end
@@ -216,22 +216,93 @@ class TestFauxsql < Test::Unit::TestCase
       assert false
     end
     
-    context "with :nested => true" do
+    context "with :nested => *" do
       context "on a map" do
         should "accept nested attributes" do
-          assert false
+          other = FauxObject.create
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id,
+            :value => "Nested"
+          }}
+          checkpoint!
+          assert_equal "Nested", @faux.dictionary[other]
+        end
+        
+        should "delete nested attributes" do
+          other = FauxObject.create
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id,
+            :value => "Nested"
+          }}
+          checkpoint!
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id,
+            :_delete => true
+          }}
+          checkpoint!
+          assert_equal [], @faux.dictionary.keys
         end
       end
 
       context "on a list" do
         should "accept nested attributes" do
-          assert false
+          other = FauxObject.create
+          @faux.things = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id
+          }}
+          checkpoint!
+          assert_equal [other], @faux.things.all
+        end        
+
+        should "delete nested attributes" do
+          other = FauxObject.create
+          @faux.things = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id
+          }}
+          checkpoint!
+          @faux.things = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id,
+            :_delete => true
+          }}
+          checkpoint!
+          assert_equal [], @faux.things.all
         end        
       end
       
       context "on an attribute" do
-        should "accept nested attributes" do
+        should "accept nested attribute" do
+        assert false
+        #   other = FauxObject.create
+        #   @faux.record = {
+        #     :type => other.class.name,
+        #     "#{other.class.name}_id".intern => other.id
+        #   }
+        #   checkpoint!
+        #   assert_equal other, @faux.record
+        end
+        
+        should "delete nested attribute" do
           assert false
+          # other = FauxObject.create
+          # @faux.record = {
+          #   :type => other.class.name,
+          #   "#{other.class.name}_id".intern => other.id
+          # }
+          # checkpoint!
+          # other = FauxObject.create
+          # @faux.record = {
+          #   :type => other.class.name,
+          #   "#{other.class.name}_id".intern => other.id,
+          #   :_delete => true
+          # }
+          # checkpoint!
+          # assert_equal nil, @faux.record
         end
       end
     end
