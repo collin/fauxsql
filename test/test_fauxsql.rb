@@ -18,13 +18,13 @@ class FauxObject
   property :id, Serial
   property :type, Discriminator
   attribute :name
-  attribute :record
+  attribute :record, :nest => FauxObject
   attribute :number, :type => :to_i
-  list :things
-  map :dictionary
+  list :things, :nest => FauxObject
+  map :dictionary, :nest => FauxObject
   map :numbers, :value_type => :to_i
   
-  manymany :others, FauxObject, :through => :others
+  manymany :others, FauxObject, :through => :others#, :nest => true TODO implement nesting on manymany
 end
 
 class OtherFauxObject < FauxObject; end
@@ -208,6 +208,105 @@ class TestFauxsql < Test::Unit::TestCase
       assert_equal 400, @faux.numbers[:a]
     end
     
+    should "obey typecasting directives for map keys" do
+      assert false
+    end
+    
+    should "obey typecasting directives for list items" do
+      assert false
+    end
+    
+    context "with :nested => *" do
+      context "on a map" do
+        should "accept nested attributes" do
+          other = FauxObject.create
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id,
+            :value => "Nested"
+          }}
+          checkpoint!
+          assert_equal "Nested", @faux.dictionary[other]
+        end
+        
+        should "delete nested attributes" do
+          other = FauxObject.create
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id,
+            :value => "Nested"
+          }}
+          checkpoint!
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id,
+            :_delete => true
+          }}
+          checkpoint!
+          assert_equal [], @faux.dictionary.keys
+        end
+      end
+
+      context "on a list" do
+        should "accept nested attributes" do
+          other = FauxObject.create
+          @faux.things = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id
+          }}
+          checkpoint!
+          assert_equal [other], @faux.things.all
+        end        
+
+        should "delete nested attributes" do
+          other = FauxObject.create
+          @faux.things = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id
+          }}
+          checkpoint!
+          @faux.things = { "0" => {
+            :type => other.class.name,
+            "#{other.class.name}_id".intern => other.id,
+            :_delete => true
+          }}
+          checkpoint!
+          assert_equal [], @faux.things.all
+        end        
+      end
+      
+      context "on an attribute" do
+        should "accept nested attribute" do
+        assert false
+        #   other = FauxObject.create
+        #   @faux.record = {
+        #     :type => other.class.name,
+        #     "#{other.class.name}_id".intern => other.id
+        #   }
+        #   checkpoint!
+        #   assert_equal other, @faux.record
+        end
+        
+        should "delete nested attribute" do
+          assert false
+          # other = FauxObject.create
+          # @faux.record = {
+          #   :type => other.class.name,
+          #   "#{other.class.name}_id".intern => other.id
+          # }
+          # checkpoint!
+          # other = FauxObject.create
+          # @faux.record = {
+          #   :type => other.class.name,
+          #   "#{other.class.name}_id".intern => other.id,
+          #   :_delete => true
+          # }
+          # checkpoint!
+          # assert_equal nil, @faux.record
+        end
+      end
+    end
+        
     context "with a manymany relationship" do
       setup do
         @faux =  FauxObject.create!
@@ -233,6 +332,10 @@ class TestFauxsql < Test::Unit::TestCase
       end
       
       # TODO think about paranoid deletion
+    end
+    
+    should "allow changing of hash key when key is record" do
+      assert false
     end
     
     should "return keys for dictionary stores" do

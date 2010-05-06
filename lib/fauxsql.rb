@@ -7,6 +7,7 @@ require 'pathname'
 root = Pathname.new(__FILE__).dirname.expand_path
 require root+'fauxsql/dereferenced_attribute'
 require root+'fauxsql/attributes'
+require root+'fauxsql/options'
 require root+'fauxsql/attribute_list'
 require root+'fauxsql/attribute_map'
 require root+'fauxsql/attribute_manymany'
@@ -26,7 +27,7 @@ module Fauxsql
       :lazy => false
     extend Fauxsql::DSL
     cattr_accessor :fauxsql_options
-    self.fauxsql_options = {}
+    self.fauxsql_options = Fauxsql::Options.new
   end
   
   # Getter method for attributes defined as:
@@ -52,22 +53,22 @@ module Fauxsql
   # Gets a reference to an AttributeList object. AttributeList quacks like
   # a Ruby Array. Except it uses Fauxsql's dereference and resolve strategy to
   # store members.
-  def get_fauxsql_list(list_name)
-    list = fauxsql_attributes[list_name] || AttributeList.new
-    ListWrapper.new(list, self, list_name)
+  def get_fauxsql_list(attribute_name)
+    list = fauxsql_attributes[attribute_name] || AttributeList.new
+    ListWrapper.new(list, self, attribute_name, fauxsql_options[attribute_name])
   end
 
   # Gets a reference to an AttributeMap object. AttributeMap quacks like
   # a Ruby Hash. Except it uses Fauxsql's dereference and resolve strategy to
   # store keys and values.  
-  def get_fauxsql_map(map_name)
-    map = fauxsql_attributes[map_name] || AttributeMap.new
-    MapWrapper.new(map, self,  map_name, fauxsql_options[map_name])
+  def get_fauxsql_map(attribute_name)
+    map = fauxsql_attributes[attribute_name] || AttributeMap.new
+    MapWrapper.new(map, self,  attribute_name, fauxsql_options[attribute_name])
   end
 
-  def get_fauxsql_manymany(manymany_name, classes, options)
-    manymany = fauxsql_attributes[manymany_name] || AttributeManymany.new
-    ManymanyWrapper.new(manymany, self, manymany_name, classes, options)
+  def get_fauxsql_manymany(attribute_name, classes, options)
+    manymany = fauxsql_attributes[attribute_name] || AttributeManymany.new
+    ManymanyWrapper.new(manymany, self, attribute_name, classes, options)
   end
 
   # When setting values, all attributes pass through this method.
@@ -98,4 +99,5 @@ module Fauxsql
     record.attribute_set(:fauxsql_attributes, record.fauxsql_attributes)
     value
   end
+
 end

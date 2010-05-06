@@ -1,6 +1,7 @@
 require "active_support/inflector"
 module Fauxsql
   module DSL
+    class InvalidNesting < StandardError; end
     # DSL method to define a named Fauxsql attribute
     #
     # calling with 'power' is like writing:
@@ -12,8 +13,8 @@ module Fauxsql
     #     set_fauxsql_attribute(:power, value)
     #   end
     def attribute(attribute_name, options={})
-      fauxsql_options[attribute_name] = options
-      class_eval <<EORUBY
+      fauxsql_options[attribute_name] = normalize_options!(options)
+      class_eval <<EORUBY, __FILE__, __LINE__
         def #{attribute_name}
           get_fauxsql_attribute(:#{attribute_name})
         end
@@ -22,6 +23,15 @@ module Fauxsql
           set_fauxsql_attribute(:#{attribute_name}, value)
         end
 EORUBY
+
+      if options[:nest]
+        class_eval <<EORUBY, __FILE__, __LINE__
+          def #{attribute_name}_attributes=(vals)
+            vals = Fauxsql::DSL.normalize_nested_vals!(vals)
+            #{attribute_name} = #{attribute_name}.get_nested_record(vals)
+          end
+EORUBY
+      end
     end
 
     # DSL method to define a named Fauxsql list
@@ -31,12 +41,25 @@ EORUBY
     #     get_fauxsql_list(:squad_members)
     #   end
     def list(attribute_name, options={})
-      fauxsql_options[attribute_name] = options
-      class_eval <<EORUBY
+      fauxsql_options[attribute_name] = normalize_options!(options)
+      class_eval <<EORUBY, __FILE__, __LINE__
         def #{attribute_name}
           get_fauxsql_list(:#{attribute_name})
         end
 EORUBY
+
+      if options[:nest]
+        class_eval <<EORUBY, __FILE__, __LINE__
+          def #{attribute_name}=(attrs)
+            #{attribute_name}.clear
+            attrs.each do |index, vals|
+              vals = Fauxsql::DSL.normalize_nested_vals!(vals)
+              record = #{attribute_name}.get_nested_record(vals)
+              #{attribute_name} << record if record unless vals[:_delete]
+            end
+          end
+EORUBY
+      end
     end
 
     # DSL method to define a named Fauxsql map
@@ -46,12 +69,27 @@ EORUBY
     #     get_fauxsql_map(:mitigates)
     #   end
     def map(attribute_name, options={})
-      fauxsql_options[attribute_name] = options
-      class_eval <<EORUBY
+      fauxsql_options[attribute_name] = normalize_options!(options)
+      class_eval <<EORUBY, __FILE__, __LINE__
         def #{attribute_name}
           get_fauxsql_map(:#{attribute_name})
         end
 EORUBY
+
+      if options[:nest]
+        class_eval <<EORUBY, __FILE__, __LINE__
+          def #{attribute_name}=(attrs)
+            deletes = []
+            attrs.each do |index, vals|
+              vals = Fauxsql::DSL.normalize_nested_vals!(vals)
+              key = #{attribute_name}.get_nested_record(vals)
+              #{attribute_name}[key] = vals[:value]
+              deletes << key if vals[:_delete]
+            end
+            deletes.each{ |key| #{attribute_name}.delete(key) }
+          end
+EORUBY
+      end
     end
 
     # DSL method to define a named Fauxsql manymany relationship
@@ -62,35 +100,21 @@ EORUBY
     #   end
     def manymany(attribute_name, classes, options)
       define_method attribute_name do
-        get_fauxsql_manymany(attribute_name, classes, options)        
+        get_fauxsql_manymany(attribute_name, classes, options)
       end
     end
 
-    def accept_nested_list_attrs_for model, map_name
-      class_eval <<EORUBY
-        def #{map_name}=(attrs)
-          #{map_name}.clear
-          attrs.each do |index, vals|
-            record = #{model.to_s}.get(vals["#{basename}_id"])
-            #{map_name} << record if record unless vals[:_delete] == "1" # Rails forms spit out 1 or 0 :)
-          end
-        end
-EORUBY
+  private
+  
+    def normalize_options!(options)
+      options[:nest] = [options[:nest]] if options[:nest] unless options[:nest].is_a?(Array)
+      options.freeze
     end
-
-    def accept_nested_map_attrs_for model, map_name
-      basename = ActiveSupport::Inflector.underscore(model.to_s.split("::").last)
-      class_eval <<EORUBY
-        def #{map_name}=(attrs)
-          deletes = []
-          attrs.each do |index, vals|
-            key = #{model.to_s}.get(vals["#{basename}_id"])
-            #{map_name}[key] = vals[:value]
-            deletes << key if vals[:_delete] == "1" # Rails forms spit out 1 or 0 :)
-          end
-          deletes.each{ |key| #{map_name}.delete(key) }
-        end
-EORUBY
-    end    
+    
+    def self.normalize_nested_vals!(vals)
+      vals[:_delete] = true if vals[:_delete] == "1" # Rails forms return "1" for nested attributes deletion.
+      vals[:_delete] = false unless vals[:_delete] == true
+      vals.freeze
+    end
   end
 end
