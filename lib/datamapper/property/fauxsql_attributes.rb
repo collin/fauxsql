@@ -1,7 +1,6 @@
 module DataMapper
   class Property
-    class FauxsqlAttributes < Object
-      lazy false
+    class FauxsqlAttributes < Text
       
       def dump(value)
         return value if value.nil?
@@ -9,7 +8,7 @@ module DataMapper
       end
       
       def load(value)
-        
+        raise "HELL #{value}"
         case value
           when ::String
             Marshal.load(value.unpack("m").first)
