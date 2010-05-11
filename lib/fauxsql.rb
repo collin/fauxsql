@@ -100,4 +100,8 @@ module Fauxsql
     value
   end
 
+  def fauxsql_nested_classes(attribute_name)
+    # Find a list of the nested classes that an attribute has and return them as a list
+    self.class.fauxsql_options[attribute_name][:nest]   # provides a list of classes  
+  end
 end

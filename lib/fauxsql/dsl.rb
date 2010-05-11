@@ -108,6 +108,7 @@ EORUBY
   
     def normalize_options!(options)
       options[:nest] = [options[:nest]] if options[:nest] unless options[:nest].is_a?(Array)
+      options[:nest] ||= []
       options.freeze
     end
     
