@@ -217,6 +217,15 @@ class TestFauxsql < Test::Unit::TestCase
     end
     
     context "with :nested => *" do
+      
+      should "allow reflection on nested classes" do
+        assert_equal [FauxObject], @faux.fauxsql_nested_classes(:things)
+      end
+      
+      should "allow reflection on nested classes when there are none" do
+        assert_equal [], @faux.fauxsql_nested_classes(:number)
+      end
+      
       context "on a map" do
         should "accept nested attributes" do
           other = FauxObject.create
