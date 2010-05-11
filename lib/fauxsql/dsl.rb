@@ -4,6 +4,11 @@ module Fauxsql
     class InvalidNesting < StandardError; end
     # DSL method to define a named Fauxsql attribute
     #
+    # See all those get_fauxsql_attribute(:#{attribute_name})'s?
+    # That's to deal with situations where an attribute/map-key/list-value 
+    # is a ruby reserved keyword.
+    # Eg. attribute :yield
+    #
     # calling with 'power' is like writing:
     #   def power
     #     get_fauxsql_attribute(:power)
@@ -28,7 +33,7 @@ EORUBY
         class_eval <<EORUBY, __FILE__, __LINE__
           def #{attribute_name}_attributes=(vals)
             vals = Fauxsql::DSL.normalize_nested_vals!(vals)
-            #{attribute_name} = #{attribute_name}.get_nested_record(vals)
+            __send__(:#{attribute_name}=, get_fauxsql_attribute(:#{attribute_name}).get_nested_record(vals))
           end
 EORUBY
       end
@@ -51,11 +56,11 @@ EORUBY
       if options[:nest]
         class_eval <<EORUBY, __FILE__, __LINE__
           def #{attribute_name}=(attrs)
-            #{attribute_name}.clear
+            get_fauxsql_attribute(:#{attribute_name}).clear
             attrs.each do |index, vals|
               vals = Fauxsql::DSL.normalize_nested_vals!(vals)
-              record = #{attribute_name}.get_nested_record(vals)
-              #{attribute_name} << record if record unless vals[:_delete]
+              record = get_fauxsql_attribute(:#{attribute_name}).get_nested_record(vals)
+              get_fauxsql_attribute(:#{attribute_name}) << record if record unless vals[:_delete]
             end
           end
 EORUBY
@@ -82,11 +87,11 @@ EORUBY
             deletes = []
             attrs.each do |index, vals|
               vals = Fauxsql::DSL.normalize_nested_vals!(vals)
-              key = #{attribute_name}.get_nested_record(vals)
-              #{attribute_name}[key] = vals[:value]
+              key = get_fauxsql_attribute(:#{attribute_name}).get_nested_record(vals)
+              get_fauxsql_attribute(:#{attribute_name})[key] = vals[:value]
               deletes << key if vals[:_delete]
             end
-            deletes.each{ |key| #{attribute_name}.delete(key) }
+            deletes.each{ |key| get_fauxsql_attribute(:#{attribute_name}).delete(key) }
           end
 EORUBY
       end
