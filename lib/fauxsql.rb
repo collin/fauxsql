@@ -1,6 +1,7 @@
 # Libs
 require 'active_support/concern'
-require 'datamapper'
+require 'active_support/core_ext/class/attribute_accessors'
+require 'dm-core'
 require 'pathname'
 
 # Internal Libs
@@ -16,13 +17,16 @@ require root+'fauxsql/map_wrapper'
 require root+'fauxsql/list_wrapper'
 require root+'fauxsql/manymany_wrapper'
 require root+'fauxsql/dsl'
+
+require root+'datamapper/property/fauxsql_attributes'
+
 module Fauxsql
   extend ActiveSupport::Concern
   
   included do
     # Property is lazy. Benchmark for lazy loading shows
     # performance is up to 5x slower when accessing fauxsql attributes.
-    property :fauxsql_attributes, Object, 
+    property :fauxsql_attributes, DataMapper::Property::FauxsqlAttributes, 
       :default => lambda{|*| Fauxsql::Attributes.new },
       :lazy => false
     extend Fauxsql::DSL
