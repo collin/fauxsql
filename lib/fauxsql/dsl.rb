@@ -56,11 +56,11 @@ EORUBY
       if options[:nest]
         class_eval <<EORUBY, __FILE__, __LINE__
           def #{attribute_name}=(attrs)
-            get_fauxsql_attribute(:#{attribute_name}).clear
+            get_fauxsql_list(:#{attribute_name}).clear
             attrs.each do |index, vals|
               vals = Fauxsql::DSL.normalize_nested_vals!(vals)
-              record = get_fauxsql_attribute(:#{attribute_name}).get_nested_record(vals)
-              get_fauxsql_attribute(:#{attribute_name}) << record if record unless vals[:_delete]
+              record = get_fauxsql_list(:#{attribute_name}).get_nested_record(vals)
+              get_fauxsql_list(:#{attribute_name}) << record if record unless vals[:_delete]
             end
           end
 EORUBY
@@ -87,11 +87,11 @@ EORUBY
             deletes = []
             attrs.each do |index, vals|
               vals = Fauxsql::DSL.normalize_nested_vals!(vals)
-              key = get_fauxsql_attribute(:#{attribute_name}).get_nested_record(vals)
-              get_fauxsql_attribute(:#{attribute_name})[key] = vals[:value]
+              key = get_fauxsql_map(:#{attribute_name}).get_nested_record(vals)
+              get_fauxsql_map(:#{attribute_name})[key] = vals[:value]
               deletes << key if vals[:_delete]
             end
-            deletes.each{ |key| get_fauxsql_attribute(:#{attribute_name}).delete(key) }
+            deletes.each{ |key| get_fauxsql_map(:#{attribute_name}).delete(key) }
           end
 EORUBY
       end
