@@ -226,12 +226,16 @@ class TestFauxsql < Test::Unit::TestCase
         assert_equal [], @faux.fauxsql_nested_classes(:number)
       end
       
+      should "agree that subclasses are valid nestable classes" do
+        assert @faux.things.valid_nested_class?(OtherFauxObject)
+      end
+      
       context "on a map" do
         should "accept nested attributes" do
           other = FauxObject.create
           @faux.dictionary = { "0" => {
             :type => other.class.name,
-            "#{other.class.name}_id".intern => other.id,
+            :id => other.id,
             :value => "Nested"
           }}
           checkpoint!
@@ -242,13 +246,13 @@ class TestFauxsql < Test::Unit::TestCase
           other = FauxObject.create
           @faux.dictionary = { "0" => {
             :type => other.class.name,
-            "#{other.class.name}_id".intern => other.id,
+            :id => other.id,
             :value => "Nested"
           }}
           checkpoint!
           @faux.dictionary = { "0" => {
             :type => other.class.name,
-            "#{other.class.name}_id".intern => other.id,
+            :id => other.id,
             :_delete => true
           }}
           checkpoint!
@@ -261,7 +265,7 @@ class TestFauxsql < Test::Unit::TestCase
           other = FauxObject.create
           @faux.things = { "0" => {
             :type => other.class.name,
-            "#{other.class.name}_id".intern => other.id
+            :id => other.id
           }}
           checkpoint!
           assert_equal [other], @faux.things.all
@@ -271,12 +275,12 @@ class TestFauxsql < Test::Unit::TestCase
           other = FauxObject.create
           @faux.things = { "0" => {
             :type => other.class.name,
-            "#{other.class.name}_id".intern => other.id
+            :id => other.id
           }}
           checkpoint!
           @faux.things = { "0" => {
             :type => other.class.name,
-            "#{other.class.name}_id".intern => other.id,
+            :id => other.id,
             :_delete => true
           }}
           checkpoint!
@@ -290,7 +294,7 @@ class TestFauxsql < Test::Unit::TestCase
         #   other = FauxObject.create
         #   @faux.record = {
         #     :type => other.class.name,
-        #     "#{other.class.name}_id".intern => other.id
+        #     :id => other.id
         #   }
         #   checkpoint!
         #   assert_equal other, @faux.record
@@ -301,13 +305,13 @@ class TestFauxsql < Test::Unit::TestCase
           # other = FauxObject.create
           # @faux.record = {
           #   :type => other.class.name,
-          #   "#{other.class.name}_id".intern => other.id
+          #   :id => other.id
           # }
           # checkpoint!
           # other = FauxObject.create
           # @faux.record = {
           #   :type => other.class.name,
-          #   "#{other.class.name}_id".intern => other.id,
+          #   :id => other.id,
           #   :_delete => true
           # }
           # checkpoint!

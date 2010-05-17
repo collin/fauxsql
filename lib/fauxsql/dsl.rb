@@ -1,7 +1,6 @@
 require "active_support/inflector"
 module Fauxsql
   module DSL
-    class InvalidNesting < StandardError; end
     # DSL method to define a named Fauxsql attribute
     #
     # calling with 'power' is like writing:

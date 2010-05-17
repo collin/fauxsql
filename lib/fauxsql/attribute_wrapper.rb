@@ -5,6 +5,12 @@ module Fauxsql
         super "Missing option :#{missing} in #{options.inspect}"
       end
     end
+    class InvalidNesting < StandardError
+      def initialize(klass, klasses)
+        super "Invalid nested class #{klass}. Should be one of #{klasses.inspect}"
+      end
+    end
+    
     extend ActiveSupport::Concern
     attr_reader:attribute
     attr_reader:record
@@ -20,8 +26,13 @@ module Fauxsql
     def get_nested_record(vals)
       model = vals[:type].constantize
       raise MissingOptions.new(:nest, options) unless options[:nest]
-      raise InvalidNesting unless options[:nest].include?(model)
-      model.get(vals["#{model.name}_id".to_sym])
+      raise InvalidNesting.new(model, options[:nest]) unless valid_nested_class?(model)
+      model.get(vals[:id])
+    end
+
+    def valid_nested_class?(model)
+      return true if options[:nest].empty?
+      options[:nest].detect{|klass| model == klass or model < klass }
     end
 
     def dirty!
