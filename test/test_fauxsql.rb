@@ -269,7 +269,26 @@ class TestFauxsql < Test::Unit::TestCase
           }}
           checkpoint!
           assert_equal [other], @faux.things.all
-        end        
+        end
+        
+        should "update nested attributes" do
+          other = FauxObject.create
+          @faux.things = { "0" => {
+            :type => other.class.name,
+            :id => other.id,
+            :name => "WHATUP!!"
+          }}
+          checkpoint!
+          assert_equal "WHATUP!!", @faux.things.first.name
+
+          @faux.things = { "0" => {
+            :type => other.class.name,
+            :id => other.id,
+            :name => "HOLLA"
+          }}
+          checkpoint!
+          assert_equal "HOLLA", @faux.things.first.name
+        end
 
         should "delete nested attributes" do
           other = FauxObject.create
