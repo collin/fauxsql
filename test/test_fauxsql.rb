@@ -11,6 +11,12 @@ class ComplexKey
   property :integer, Integer, :key => true
 end
 
+class RequiringField
+  include DataMapper::Resource  
+  property :id, Serial
+  property :name, String, :required => true
+end
+
 class FauxObject
   include DataMapper::Resource
   include Fauxsql
@@ -18,13 +24,13 @@ class FauxObject
   property :id, Serial
   property :type, Discriminator
   attribute :name
-  attribute :record, :nest => FauxObject
+  attribute :record, :nest => [FauxObject, String, Symbol]
   attribute :number, :type => :to_i
-  list :things, :nest => FauxObject
-  map :dictionary, :nest => FauxObject
+  list :things, :nest => [FauxObject, RequiringField, Symbol, SimpleKey]
+  map :dictionary, :nest => [FauxObject, String, Symbol, SimpleKey]
   map :numbers, :value_type => :to_i
   
-  manymany :others, FauxObject, :through => :others#, :nest => true TODO implement nesting on manymany
+  manymany :others, :nest => [FauxObject], :through => :others#, :nest => true TODO implement nesting on manymany
 end
 
 class OtherFauxObject < FauxObject; end
@@ -34,6 +40,15 @@ class TestFauxsql < Test::Unit::TestCase
     setup do
       DataMapper.auto_migrate!
       @faux = FauxObject.new
+    end
+    
+    should "have reflection for fauxsql attributes" do
+      assert FauxObject.has_fauxsql_attribute?(:name)
+    end
+    
+    should "have reflection for fauxsql attributes by type" do
+      assert FauxObject.has_fauxsql_attribute?(:things, :list)
+      assert not(FauxObject.has_fauxsql_attribute?(:things, :manymany))
     end
     
     should "have getters and setters for attributes" do
@@ -219,7 +234,7 @@ class TestFauxsql < Test::Unit::TestCase
     context "with :nested => *" do
       
       should "allow reflection on nested classes" do
-        assert_equal [FauxObject], @faux.fauxsql_nested_classes(:things)
+        assert_equal [FauxObject, RequiringField, Symbol, SimpleKey], @faux.fauxsql_nested_classes(:things)
       end
       
       should "allow reflection on nested classes when there are none" do
@@ -227,7 +242,7 @@ class TestFauxsql < Test::Unit::TestCase
       end
       
       should "agree that subclasses are valid nestable classes" do
-        assert @faux.things.valid_nested_class?(OtherFauxObject)
+        assert @faux.things.assert_valid_nested_class!(OtherFauxObject)
       end
       
       context "on a map" do
@@ -272,14 +287,24 @@ class TestFauxsql < Test::Unit::TestCase
         end
         
         should  "create new records when there is no id" do
-          other = FauxObject.create
           @faux.things = { "0" => {
-            :type => other.class.name,
+            :type => FauxObject.name,
             :name => "WHATUP!!"
           }}
           checkpoint!
           assert @faux.things.first.id
           assert_equal "WHATUP!!", @faux.things.first.name
+        end
+        
+        should "preserve validation errors across checkpoints, but not save" do
+          @faux.things = { "0" => {
+            :type => RequiringField.name
+          }}
+          checkpoint!
+          assert not(@faux.things.empty?)
+          bad_thing = @faux.things.first
+          assert bad_thing.new?
+          raise bad_thing.errors.inspect
         end
         
         should "update nested attributes" do
@@ -352,7 +377,7 @@ class TestFauxsql < Test::Unit::TestCase
         
     context "with a manymany relationship" do
       setup do
-        @faux =  FauxObject.create!
+        @faux  = FauxObject.create!
         @other = FauxObject.create!
         @faux.others << @other
         checkpoint!

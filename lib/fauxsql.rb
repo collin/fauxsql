@@ -23,25 +23,41 @@ require root+'fauxsql/dsl'
 module Fauxsql
   extend ActiveSupport::Concern
   
+  class NoFauxsqlAttribute < ArgumentError
+    def initialize(attribute_name, attribute_names)
+      super "No attribute named #{attribute_name} try one of #{attribute_names.inspect}."
+    end
+  end
+  
   included do
-    # Property is lazy. Benchmark for lazy loading shows
-    # performance is up to 5x slower when accessing fauxsql attributes.
+    # Benchmark shows performance is up to 5x slower when accessing fauxsql attributes lazily.
     property :fauxsql_attributes, Object, 
       :default => lambda{|*| Fauxsql::Attributes.new },
       :lazy => false
     extend Fauxsql::DSL
     cattr_accessor :fauxsql_options
     self.fauxsql_options = Fauxsql::Options.new
+    
+    validates_with_method :fauxsql_collect_nested_errors
   end
   
   # Getter method for attributes defined as:
   #   attribute :attribute_name
   def get_fauxsql_attribute(attribute_name)
-    attribute = fauxsql_attributes[attribute_name]
-    value = Fauxsql.resolve_fauxsql_attribute(attribute)
-
-    options = fauxsql_options[attribute_name]
-    options and options[:type] ? value.send(options[:type]) : value
+    options = fauxsql_options[attribute_name] or raise NoFauxsqlAttribute(attribute_name, fauxsql_options.keys)
+    
+    case options[:attribute_type]
+    when :attribute
+      attribute = fauxsql_attributes[attribute_name]
+      value = Fauxsql.resolve_fauxsql_attribute(attribute)
+      options and options[:type] ? value.send(options[:type]) : value
+    when :list
+      get_fauxsql_list(attribute_name)
+    when :map
+      get_fauxsql_map(attribute_name)
+    when :manymany
+      get_fauxsql_manymany(attribute_name)
+    end
   end
 
   # Setter method for attributes defined as:
@@ -70,17 +86,17 @@ module Fauxsql
     MapWrapper.new(map, self,  attribute_name, fauxsql_options[attribute_name])
   end
 
-  def get_fauxsql_manymany(attribute_name, classes, options)
+  def get_fauxsql_manymany(attribute_name)
     manymany = fauxsql_attributes[attribute_name] || AttributeManymany.new
-    ManymanyWrapper.new(manymany, self, attribute_name, classes, options)
+    ManymanyWrapper.new(manymany, self, attribute_name, fauxsql_options[attribute_name])
   end
 
   # When setting values, all attributes pass through this method.
   # This way we can control how certain classes are serialized by Fauxsql
   # See #resolve_fauxsql_attribute to see how attributes are read.
   def self.dereference_fauxsql_attribute(attribute)
-    if attribute.is_a?(DataMapper::Resource)
-      DereferencedAttribute.get(attribute)
+    if attribute.is_a?(DataMapper::Resource) and attribute.valid?
+      attribute.new? ? attribute : DereferencedAttribute.get(attribute)
     else
       attribute
     end
@@ -95,6 +111,20 @@ module Fauxsql
     else
       attribute
     end
+  end
+  
+  def fauxsql_collect_nested_errors
+    # bail out if we have no fauxsql_attributes
+    return true unless fauxsql_attributes.any?
+    
+    # calls to attribute.collect_nested_errors will return true if there arent errors. 
+    with_errors = fauxsql_attributes.
+      select{ |name, attribute| get_fauxsql_attribute(name).respond_to?(:collect_nested_errors)}.
+      reject{ |name, attribute| get_fauxsql_attribute(name).collect_nested_errors }
+    
+    # return false if the are any with_errors
+    # true if there aren't
+    not with_errors.any?
   end
   
   def self.dirty!(record)

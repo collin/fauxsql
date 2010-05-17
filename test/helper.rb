@@ -3,6 +3,7 @@ require 'test/unit'
 require 'shoulda'
 require 'dm-core'
 require 'dm-migrations'
+require 'dm-validations'
 DataMapper.setup(:default, "sqlite3://:memory:")
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))

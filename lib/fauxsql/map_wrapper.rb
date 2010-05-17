@@ -5,12 +5,17 @@ module Fauxsql
     delegate :[], :each, :each_with_index, :keys, :resolve_key, :resolve_value, :to => :map
     
     def []=(key, value)
+      assert_valid_nested_class!(key.class)
       value = value.send(options[:value_type]) if options[:value_type]
       dirty! { map[key] = value }
     end
     
     def [](key)
       options[:value_type] ? map[key].send(options[:value_type]) : map[key]
+    end
+    
+    def collect_nested_errors
+      true # Not yet creating/saving full objects in mappings.
     end
     
     def delete(key)

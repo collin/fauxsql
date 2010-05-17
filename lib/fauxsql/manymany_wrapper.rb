@@ -2,27 +2,42 @@ require "active_support/core_ext/module/delegation"
 require 'active_support/core_ext/array/extract_options'
 module Fauxsql
   class ManymanyWrapper < AttributeWrapper
-    class ThroughOptionMissing < StandardError; end
-    class InvalidManymanyAssociationClass < StandardError; end
+    class InvalidManymanyAssociationClass < StandardError
+      def initialize(klass, through)
+        super "#{klass} does not have a corresponding manymany attribute named #{through}."
+      end
+    end
     
     alias list attribute
     delegate :-, :[], :==, :first, :last, :each, :each_with_index, :map, :all, :equals, :to => :list
     
-    def initialize(attribute, record, name, *classes)
-      super(attribute, record, name, {})
-      options = classes.extract_options!
-      raise ThroughOptionMissing unless options[:through]
-      @classes, @through = classes, options[:through]
+    def initialize(attribute, record, name, options)
+      super(attribute, record, name, options)
+      raise MissingOptions.new(:through, options) unless options[:through]
+      raise MissingOptions.new(:nest, options) unless options[:nest].any?
+      @through = options[:through]
+      options[:nest].each do |klass|
+        raise InvalidManymanyAssociationClass.new(klass, @through) unless klass.has_fauxsql_attribute?(@through, :manymany)
+      end
+    end
+    
+    def collect_nested_errors
+      with_errors = all.reject do |item|
+        next unless item.is_a?(DataMapper::Resource)
+        next if item.valid?
+        item.errors.each{|error| record.errors.add(:general, error) }
+      end
+      
+      not with_errors.any?
     end
     
     def <<(other)
-      raise InvalidManymanyAssociationClass unless @classes.include?(other.class)
+      assert_valid_nested_class!(other.class)
       other.send(@through).clean_push(record)
       clean_push(other)
     end
-    
+        
     def delete(*others)
-      raise InvalidManymanyAssociationClass if (@classes - others.map{|other| other.class }).any?
       clean_subtract(others)
       others.each{ |other| other.send(@through).clean_subtract([record]) }
       # # DataMapper.transaction do # TODO the transaction?
