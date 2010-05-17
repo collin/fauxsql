@@ -9,7 +9,7 @@ module Fauxsql
     end
     
     def get_nested_record(vals)
-      record = super or model.new
+      record = super || vals[:type].constantize.new
       attributes = vals.dup
       [:id, :type, :_delete].map{ |key| attributes.delete key }
       record.attributes = attributes

@@ -271,6 +271,17 @@ class TestFauxsql < Test::Unit::TestCase
           assert_equal [other], @faux.things.all
         end
         
+        should  "create new records when there is no id" do
+          other = FauxObject.create
+          @faux.things = { "0" => {
+            :type => other.class.name,
+            :name => "WHATUP!!"
+          }}
+          checkpoint!
+          assert @faux.things.first.id
+          assert_equal "WHATUP!!", @faux.things.first.name
+        end
+        
         should "update nested attributes" do
           other = FauxObject.create
           @faux.things = { "0" => {
