@@ -304,7 +304,8 @@ class TestFauxsql < Test::Unit::TestCase
           assert not(@faux.things.empty?)
           bad_thing = @faux.things.first
           assert bad_thing.new?
-          raise bad_thing.errors.inspect
+          assert not(@faux.valid?)
+          assert bad_thing.errors.on(:name).any?
         end
         
         should "update nested attributes" do
