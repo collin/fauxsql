@@ -259,6 +259,25 @@ class TestFauxsql < Test::Unit::TestCase
           assert_equal "Nested", @faux.dictionary[other]
         end
         
+        should "update nested attributes" do
+          other = FauxObject.create
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            :id => other.id,
+            :value => "Nested"
+          }}
+          checkpoint!
+          assert_equal "Nested", @faux.dictionary[other]
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            :id => other.id,
+            :value => "WOAH"
+          }}
+          checkpoint!
+          assert_equal "WOAH", @faux.dictionary[other]
+          assert_equal 1, @faux.dictionary.size
+        end
+        
         should "delete nested attributes" do
           other = FauxObject.create
           @faux.dictionary = { "0" => {
