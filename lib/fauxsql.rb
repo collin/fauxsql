@@ -128,7 +128,7 @@ module Fauxsql
   
   def fauxsql_collect_nested_errors
     # bail out if we have no fauxsql_attributes
-    return true unless fauxsql_attributes.any?
+    return true unless fauxsql_attributes.nil? or fauxsql_attributes.any?
     
     # calls to attribute.collect_nested_errors will return true if there arent errors. 
     with_errors = fauxsql_attributes.
