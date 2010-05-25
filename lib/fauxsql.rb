@@ -1,6 +1,7 @@
 # Libs
 require 'active_support/concern'
 require 'active_support/core_ext/class/attribute_accessors'
+require 'active_support/memoizable'
 require 'dm-core'
 require 'pathname'
 
@@ -29,18 +30,30 @@ module Fauxsql
     end
   end
   
+  module FauxsqlAccessor
+    extend ActiveSupport::Memoizable
+    def fauxsql_attributes
+      unless attributes = super
+        attributes = Fauxsql::Attributes.new
+        attribute_set(:fauxsql_attributes, attributes)
+      end
+      attributes
+    end
+    memoize :fauxsql_attributes
+  end
+  
   included do
     # Benchmark shows performance is up to 5x slower when accessing fauxsql attributes lazily.
-    property :fauxsql_attributes, Object, 
-      :default => lambda{|*| Fauxsql::Attributes.new },
-      :lazy => false
+    property :fauxsql_attributes, Object, :lazy => false
+    # Let dm define this first, then we can swoop in.
+    include FauxsqlAccessor
     extend Fauxsql::DSL
     cattr_accessor :fauxsql_options
     self.fauxsql_options = Fauxsql::Options.new
     
     validates_with_method :fauxsql_collect_nested_errors
   end
-  
+    
   # Getter method for attributes defined as:
   #   attribute :attribute_name
   def get_fauxsql_attribute(attribute_name)

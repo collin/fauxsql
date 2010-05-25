@@ -1,4 +1,6 @@
-require 'test/helper'
+require "pathname"
+root = Pathname.new(__FILE__).dirname.expand_path + ".."
+require (root + "test/helper").to_s
 
 class SimpleKey
   include DataMapper::Resource  
