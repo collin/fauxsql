@@ -33,7 +33,7 @@ module Fauxsql
   module FauxsqlAccessor
     extend ActiveSupport::Memoizable
     def fauxsql_attributes
-      unless attributes = super
+      unless attributes = attribute_get(:fauxsql_attributes)
         attributes = Fauxsql::Attributes.new
         attribute_set(:fauxsql_attributes, attributes)
       end
