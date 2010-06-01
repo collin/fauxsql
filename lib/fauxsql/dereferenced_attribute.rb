@@ -14,7 +14,7 @@ module Fauxsql
   # primary key are stored.
   class DereferencedAttribute
     # TODO: Ask Sundar for opinion about this.
-    DumpFormatMarker = 0x77
+    DumpFormatMarker = 0x309 # Shows up as 777 in a JSON dump (Lucky Sevens :)
     @@identity_map = {}
     def initialize(attribute)
       raise DereferencingIllegalAttribute.new(attribute) if attribute.key.nil?
