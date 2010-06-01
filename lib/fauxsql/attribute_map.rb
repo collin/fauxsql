@@ -33,9 +33,7 @@ module Fauxsql
         yield(resolve_key(key), resolve_value(value))
       end
     end
-    
-    # VERY VERY SPECIFIC to the marshal dump format.
-    # Probably brittle.
+
     def keys
       super.map do |key|
         resolve_key(key)
