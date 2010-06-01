@@ -17,6 +17,14 @@ module Fauxsql
     def collect_nested_errors
       true # Not yet creating/saving full objects in mappings.
     end
+
+    def reset!
+      dirty! do
+        old = map.dup
+        map.clear
+        map.merge!(old)
+      end
+    end
         
     def delete(key)
       dirty! { map.delete(key) }

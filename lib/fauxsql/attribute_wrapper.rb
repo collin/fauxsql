@@ -39,6 +39,10 @@ module Fauxsql
       raise InvalidNesting.new(record, name, options[:attribute_type], model, options[:nest])
     end
 
+    def reset!
+      raise "Unimplemented method Fauxsql::AttributeWrapper#reset! Implement it in subclass #{self.class}"      
+    end
+    
     def dirty!
       Fauxsql.dirty!(record){ yield }
     end

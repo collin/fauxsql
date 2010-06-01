@@ -140,6 +140,16 @@ class TestFauxsql < Test::Unit::TestCase
       assert_equal 1, @faux.dictionary[:a]
       assert_equal 2, @faux.dictionary[:b]
     end
+
+    should "reset! maps" do
+      @faux.dictionary[:a] = 1
+      @faux.dictionary[:b] = 2
+      checkpoint!
+      @faux.dictionary.reset!
+      checkpoint!
+      assert_equal 1, @faux.dictionary[:a]
+      assert_equal 2, @faux.dictionary[:b]
+    end
     
     should "dereference and resolve objects that include Fauxsql" do
       has_fauxsql = OtherFauxObject.create
@@ -173,11 +183,22 @@ class TestFauxsql < Test::Unit::TestCase
       assert_same_elements [:hello, simple, :goodbye], @faux.things.all
     end
 
+    should "reset! lists" do
+      has_fauxsql = OtherFauxObject.create
+      @faux.things << :hello
+      @faux.things << has_fauxsql
+      @faux.things << :goodbye
+      checkpoint!
+      assert_same_elements [:hello, has_fauxsql, :goodbye], @faux.things.all
+    end
+
     should "derefencenc and resolve fauxsql objects in lists" do
       has_fauxsql = OtherFauxObject.create
       @faux.things << :hello
       @faux.things << has_fauxsql
       @faux.things << :goodbye
+      checkpoint!
+      @faux.things.reset!
       checkpoint!
       assert_same_elements [:hello, has_fauxsql, :goodbye], @faux.things.all
     end

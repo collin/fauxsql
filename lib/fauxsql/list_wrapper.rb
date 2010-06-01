@@ -28,6 +28,14 @@ module Fauxsql
       record
     end
     
+    def reset!
+      dirty! do
+        old = list.dup
+        list.clear
+        old.each { |item| list << item }
+      end
+    end
+    
     def clear
       dirty! { list.clear }
     end
