@@ -27,6 +27,7 @@ module Fauxsql
     end
 
     def get_nested_record(vals)
+      # todo: raise specific error when :id and :type are nil
       model = vals[:type].constantize
       assert_valid_nested_class!(model)
       model.get(vals[:id])

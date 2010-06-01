@@ -50,7 +50,7 @@ class TestFauxsql < Test::Unit::TestCase
     
     should "have reflection for fauxsql attributes by type" do
       assert FauxObject.has_fauxsql_attribute?(:things, :list)
-      assert not(FauxObject.has_fauxsql_attribute?(:things, :manymany))
+      assert !(FauxObject.has_fauxsql_attribute?(:things, :manymany))
     end
     
     should "have getters and setters for attributes" do
@@ -322,10 +322,10 @@ class TestFauxsql < Test::Unit::TestCase
             :type => RequiringField.name
           }}
           checkpoint!
-          assert not(@faux.things.empty?)
+          assert !(@faux.things.empty?)
           bad_thing = @faux.things.first
           assert bad_thing.new?
-          assert not(@faux.valid?)
+          assert !(@faux.valid?)
           assert bad_thing.errors.on(:name).any?
         end
         

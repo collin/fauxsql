@@ -1,11 +1,11 @@
 source :gemcutter
 
-git "git://github.com/rails/rails.git" do
-  gem "activesupport",     :require => "active_support"
-end
+gem "activesupport", "3.0.0.beta3", :require => "active_support"
+
 gem "rake"
 gem "jeweler"
 gem "shoulda"
+gem "yajl-ruby"
 
 gem "data_objects"
 gem "do_sqlite3"
