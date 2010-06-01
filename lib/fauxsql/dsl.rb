@@ -110,6 +110,14 @@ EORUBY
       end
     end
     
+    def fauxsql_attribute_names(*types)
+      hits = []
+      types = [:attribute, :list, :map, :manymany] if types.empty?
+      fauxsql_options.each do |key, opts|
+        hits << key if types.include?(opts[:attribute_type])
+      end
+      hits
+    end
   private
   
     def define_fauxsql_getter(attribute_name)
