@@ -38,6 +38,9 @@ end
 class OtherFauxObject < FauxObject; end
 
 class TestFauxsql < Test::Unit::TestCase
+  def pending(message)
+    raise "Pending: #{message}"
+  end
   context "A FauxObject" do
     setup do
       DataMapper.auto_migrate!
@@ -66,6 +69,23 @@ class TestFauxsql < Test::Unit::TestCase
     
     should "mix reflections" do
       assert_same_elements [:things, :name, :record, :number], FauxObject.fauxsql_attribute_names(:list, :attribute)
+    end
+    
+    should "have reflection for attributes of specific types on a single record" do
+      @faux.things << :one
+      @faux.things << :two
+      @faux.numbers[:a] = 1
+      @faux.numbers[:b] = 1
+
+      assert_same_elements [:things, :numbers, :dictionary], @faux.get_fauxsql_attributes(:map, :list).map(&:name)
+    end
+    
+    should "have reflection on all fauxsql attrs of indeterminate type" do
+      pending "Fails because :attribute type is NOT wrapped. TODO: wrap it"
+      # Fauxsql attributes are lazy. So to test this we need to load them all first. Othewise they do not exist when we call map
+      # @faux.get_fauxsql_attributes
+      # raise @faux.get_fauxsql_attributes.inspect
+      # assert_same_elements [:things, :dictionary, :numbers], @faux.get_fauxsql_attributes(:map, :list, :ma).map(&:name)
     end
     
     should "have reflection for named fauxsql attributes" do
@@ -250,11 +270,11 @@ class TestFauxsql < Test::Unit::TestCase
     end
     
     should "obey typecasting directives for map keys" do
-      assert false
+      pending "have no need for this currently"
     end
     
     should "obey typecasting directives for list items" do
-      assert false
+      pending "hove no need for this currently"
     end
     
     context "with :nested => *" do
@@ -391,7 +411,7 @@ class TestFauxsql < Test::Unit::TestCase
       
       context "on an attribute" do
         should "accept nested attribute" do
-        assert false
+        pending "have no need for this currently"
         #   other = FauxObject.create
         #   @faux.record = {
         #     :type => other.class.name,
@@ -402,7 +422,7 @@ class TestFauxsql < Test::Unit::TestCase
         end
         
         should "delete nested attribute" do
-          assert false
+          pending "have no need for this currently"
           # other = FauxObject.create
           # @faux.record = {
           #   :type => other.class.name,
@@ -446,10 +466,6 @@ class TestFauxsql < Test::Unit::TestCase
       end
       
       # TODO think about paranoid deletion
-    end
-    
-    should "allow changing of hash key when key is record" do
-      assert false
     end
     
     should "return keys for dictionary stores" do

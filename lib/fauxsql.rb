@@ -24,6 +24,8 @@ require root+'fauxsql/dsl'
 module Fauxsql
   extend ActiveSupport::Concern
   
+  AttributeTypes = [:attribute, :list, :map, :manymany].freeze
+  
   class NoFauxsqlAttribute < ArgumentError
     def initialize(attribute_name, attribute_names)
       super "No attribute named #{attribute_name} try one of #{attribute_names.inspect}."
@@ -53,7 +55,18 @@ module Fauxsql
     
     validates_with_method :fauxsql_collect_nested_errors
   end
+  
+  def get_fauxsql_attributes(*types)
+    hits = []
+    types = Fauxsql::AttributeTypes if types.empty?
     
+    fauxsql_options.each do |key, options|
+      hits << send(key) if types.include?(options[:attribute_type])
+    end
+    
+    hits.compact
+  end
+  
   # Getter method for attributes defined as:
   #   attribute :attribute_name
   def get_fauxsql_attribute(attribute_name)
@@ -72,7 +85,7 @@ module Fauxsql
       get_fauxsql_manymany(attribute_name)
     end
   end
-
+  
   # Setter method for attributes defined as:
   #   attribute :attribute_name
   def set_fauxsql_attribute(attribute_name, value)

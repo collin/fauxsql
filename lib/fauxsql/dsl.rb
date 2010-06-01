@@ -112,7 +112,7 @@ EORUBY
     
     def fauxsql_attribute_names(*types)
       hits = []
-      types = [:attribute, :list, :map, :manymany] if types.empty?
+      types = Fauxsql::AttributeTypes if types.empty?
       fauxsql_options.each do |key, opts|
         hits << key if types.include?(opts[:attribute_type])
       end
