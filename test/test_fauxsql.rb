@@ -35,7 +35,9 @@ class FauxObject
   manymany :others, :nest => [FauxObject], :through => :others#, :nest => true TODO implement nesting on manymany
 end
 
-class OtherFauxObject < FauxObject; end
+class OtherFauxObject < FauxObject
+  list :childs_things
+end
 
 class TestFauxsql < Test::Unit::TestCase
   def pending(message)
@@ -62,7 +64,7 @@ class TestFauxsql < Test::Unit::TestCase
     should "have reflection for fauxsql attributes" do
       assert_same_elements [:name, :record, :number], FauxObject.fauxsql_attribute_names(:attribute)
     end
-    
+        
     should "reflect all attributes" do
       assert_same_elements [:name, :record, :number, :things, :others, :dictionary, :numbers], FauxObject.fauxsql_attribute_names
     end

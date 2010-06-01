@@ -13,8 +13,10 @@ module Fauxsql
   # DataMapper::Resource object is given. This way only the class and the 
   # primary key are stored.
   class DereferencedAttribute
-    # TODO: Ask Sundar for opinion about this.
-    DumpFormatMarker = 0x309 # Shows up as 777 in a JSON dump (Lucky Sevens :)
+    # TODO: wrap raw values as well as ref values
+    # RawMarker = "raw".freeze
+    RefMarker = "ref".freeze
+    
     @@identity_map = {}
     def initialize(attribute)
       raise DereferencingIllegalAttribute.new(attribute) if attribute.key.nil?
@@ -27,7 +29,7 @@ module Fauxsql
     end
     
     def dump
-      JSON.dump [DumpFormatMarker, @klass.to_s, @lookup_key]
+      JSON.dump [RefMarker, @klass.to_s, @lookup_key]
     end
     alias hash dump
     
@@ -43,7 +45,7 @@ module Fauxsql
     
     def self.is_dump?(candidate)
       data = JSON.load(candidate)
-      data.is_a?(Array) and data.first == DumpFormatMarker
+      data.is_a?(Array) and data.first == RefMarker
     rescue JSON::ParserError
       false
     end

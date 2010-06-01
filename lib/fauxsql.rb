@@ -50,7 +50,9 @@ module Fauxsql
     # Let dm define this first, then we can swoop in.
     include FauxsqlAccessor
     extend Fauxsql::DSL
-    cattr_accessor :fauxsql_options
+    # TODO: determine if extlib_inheritable_accessor or class_inheritable_accessor should be used.
+    # class_inheritable_accessor does not really work :(
+    extlib_inheritable_accessor :fauxsql_options
     self.fauxsql_options = Fauxsql::Options.new
     
     validates_with_method :fauxsql_collect_nested_errors
