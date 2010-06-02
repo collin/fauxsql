@@ -22,7 +22,9 @@ module Fauxsql
       dirty! do
         old = map.dup
         map.clear
-        map.merge!(old)
+        old.each do |key, value|
+          map[key] = value
+        end
       end
     end
         
