@@ -34,6 +34,10 @@ module Fauxsql
       end
     end
 
+    def include?(key)
+      !(self[key]).nil?
+    end
+
     def keys
       super.map do |key|
         resolve_key(key)

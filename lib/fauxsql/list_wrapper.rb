@@ -2,13 +2,13 @@ require "active_support/core_ext/module/delegation"
 module Fauxsql
   class ListWrapper < AttributeWrapper
     alias list attribute
-    delegate :[], :==, :first, :empty?, :last, :each, :each_with_index, :map, :all, :+, :-, :equals, :to => :list
+    delegate :[], :==, :first, :empty?, :include?, :last, :each, :each_with_index, :map, :all, :+, :-, :equals, :to => :list
     
     def <<(item)
       assert_valid_nested_class!(item.class)
       dirty! { list << item }
     end
-    
+        
     def collect_nested_errors
       with_errors = all.select do |item|
         next unless item.is_a?(DataMapper::Resource)

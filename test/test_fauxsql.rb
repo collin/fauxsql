@@ -232,6 +232,20 @@ class TestFauxsql < Test::Unit::TestCase
       assert_equal simple2, @faux.dictionary[simple1]
     end
     
+    should "detect inclusion of items in lists" do
+      other = FauxObject.create
+      @faux.things << other
+      checkpoint!
+      assert @faux.things.include?(other)
+    end
+    
+    should "detect inclusion of items in maps" do
+      other = FauxObject.create
+      @faux.dictionary[other] = "anything"
+      checkpoint!
+      assert @faux.dictionary.include?(other)
+    end
+    
     should "give records as keys/values when calling #each" do
       simple1 = SimpleKey.create
       simple2 = SimpleKey.create

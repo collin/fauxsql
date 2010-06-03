@@ -10,6 +10,10 @@ module Fauxsql
       Fauxsql.resolve_fauxsql_attribute super(index)
     end
 
+    def include?(an_item)
+      detect { |item| Fauxsql.resolve_fauxsql_attribute(item) == item }
+    end
+
     def first
       self[0]
     end
