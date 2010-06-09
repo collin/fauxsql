@@ -10,7 +10,7 @@ gem "yajl-ruby"
 gem "data_objects"
 gem "do_sqlite3"
 
-DmGemVersion = "1.0.0.rc2"
+DmGemVersion = "1.0.0"
 gem "dm-do-adapter",                DmGemVersion
 gem "dm-sqlite-adapter",            DmGemVersion
 gem "dm-timestamps",                DmGemVersion
