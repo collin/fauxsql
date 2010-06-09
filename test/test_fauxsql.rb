@@ -133,6 +133,17 @@ class TestFauxsql < Test::Unit::TestCase
       assert @faux.things == [:hello, :goodbye]
     end
     
+    should "delete items from lists" do
+      other = FauxObject.create
+      @faux.things << :hello
+      @faux.things << other
+      checkpoint!
+      @faux.things.delete(other)
+      assert_same_elements [:hello], @faux.things.all
+      @faux.things.delete(:hello)
+      assert_same_elements [], @faux.things.all      
+    end
+     
     should "persist maps" do
       @faux.dictionary[:a] = 1
       @faux.dictionary[:b] = 2

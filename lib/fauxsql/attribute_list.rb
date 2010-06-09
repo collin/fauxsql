@@ -23,7 +23,7 @@ module Fauxsql
     end
 
     def all
-      map{|item| Fauxsql.resolve_fauxsql_attribute item }
+      map{ |item| Fauxsql.resolve_fauxsql_attribute item }
     end
 
     def equals list
@@ -36,6 +36,11 @@ module Fauxsql
     
     def each_with_index
       super{|item, index| yield(Fauxsql.resolve_fauxsql_attribute(item), index) }
+    end
+
+    def delete(item)
+      real_item = Fauxsql.dereference_fauxsql_attribute(item)
+      super(real_item)
     end
 
     def -(others)

@@ -2,7 +2,7 @@ require "active_support/core_ext/module/delegation"
 module Fauxsql
   class ListWrapper < AttributeWrapper
     alias list attribute
-    delegate :[], :==, :first, :empty?, :include?, :last, :each, :each_with_index, :map, :all, :+, :-, :equals, :to => :list
+    delegate :[], :==, :first, :empty?, :include?, :delete, :last, :each, :each_with_index, :map, :all, :+, :-, :equals, :to => :list
     
     def <<(item)
       assert_valid_nested_class!(item.class)
