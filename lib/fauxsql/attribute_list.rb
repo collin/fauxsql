@@ -43,9 +43,9 @@ module Fauxsql
       super(real_item)
     end
 
-    def -(others)
-      others = others.map{|other| Fauxsql.dereference_fauxsql_attribute(other).hash }
-      reject!{|one| others.include?(one.hash) }
+    def -(items)
+      items = items.map{|other| Fauxsql.dereference_fauxsql_attribute(other).hash }
+      reject!{|one| items.include?(one.hash) }
       self
     end
 

@@ -138,10 +138,11 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << :hello
       @faux.things << other
       checkpoint!
-      @faux.things.delete(other)
-      assert_same_elements [:hello], @faux.things.all
       @faux.things.delete(:hello)
-      assert_same_elements [], @faux.things.all      
+      checkpoint!
+      assert_same_elements [other], @faux.things.all      
+      @faux.things.delete(other)
+      assert_same_elements [], @faux.things.all
     end
      
     should "persist maps" do
