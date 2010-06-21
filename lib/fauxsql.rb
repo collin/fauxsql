@@ -18,6 +18,8 @@ require root+'fauxsql/map_wrapper'
 require root+'fauxsql/list_wrapper'
 require root+'fauxsql/manymany_wrapper'
 require root+'fauxsql/dsl'
+require root+'fauxsql/data_mapper'
+require root+'fauxsql/embedded'
 
 # require root+'datamapper/property/fauxsql_attributes'
 
@@ -32,30 +34,12 @@ module Fauxsql
     end
   end
   
-  module FauxsqlAccessor
-    extend ActiveSupport::Memoizable
-    def fauxsql_attributes
-      unless attributes = attribute_get(:fauxsql_attributes)
-        attributes = Fauxsql::Attributes.new
-        attribute_set(:fauxsql_attributes, attributes)
-      end
-      attributes
-    end
-    memoize :fauxsql_attributes
-  end
-  
   included do
-    # Benchmark shows performance is up to 5x slower when accessing fauxsql attributes lazily.
-    property :fauxsql_attributes, Object, :lazy => false
-    # Let dm define this first, then we can swoop in.
-    include FauxsqlAccessor
     extend Fauxsql::DSL
     # TODO: determine if extlib_inheritable_accessor or class_inheritable_accessor should be used.
     # class_inheritable_accessor does not really work :(
     extlib_inheritable_accessor :fauxsql_options
     self.fauxsql_options = Fauxsql::Options.new
-    
-    validates_with_method :fauxsql_collect_nested_errors
   end
   
   def get_fauxsql_attributes(*types)
@@ -123,7 +107,7 @@ module Fauxsql
   # This way we can control how certain classes are serialized by Fauxsql
   # See #resolve_fauxsql_attribute to see how attributes are read.
   def self.dereference_fauxsql_attribute(attribute)
-    if attribute.is_a?(DataMapper::Resource) and attribute.valid?
+    if attribute.is_a?(::DataMapper::Resource) and attribute.valid?
       attribute.new? ? attribute : DereferencedAttribute.get(attribute)
     else
       attribute

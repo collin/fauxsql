@@ -11,7 +11,7 @@ module Fauxsql
         
     def collect_nested_errors
       with_errors = all.select do |item|
-        next unless item.is_a?(DataMapper::Resource)
+        next unless item.is_a?(::DataMapper::Resource)
         next if item == record
         next if item.valid?
         item.errors.each{|error| record.errors.add(:general, error) }

@@ -19,17 +19,28 @@ class RequiringField
   property :name, String, :required => true
 end
 
+class EmbeddedObject
+  include Fauxsql::Embedded
+  
+  attribute :name
+  attribute :record
+  
+  list :things
+  
+  map :dictionary
+end
+
 class FauxObject
   include DataMapper::Resource
-  include Fauxsql
+  include Fauxsql::DataMapper
   
   property :id, Serial
   property :type, Discriminator
   attribute :name
-  attribute :record, :nest => [FauxObject, String, Symbol]
+  attribute :record, :nest => [FauxObject, String, Symbol, EmbeddedObject]
   attribute :number, :type => :to_i
-  list :things, :nest => [FauxObject, RequiringField, Symbol, SimpleKey]
-  map :dictionary, :nest => [FauxObject, String, Symbol, SimpleKey]
+  list :things, :nest => [FauxObject, RequiringField, Symbol, SimpleKey, EmbeddedObject]
+  map :dictionary, :nest => [FauxObject, String, Symbol, SimpleKey, EmbeddedObject]
   map :numbers, :value_type => :to_i
   
   manymany :others, :nest => [FauxObject], :through => :others#, :nest => true TODO implement nesting on manymany
@@ -43,10 +54,68 @@ class TestFauxsql < Test::Unit::TestCase
   def pending(message)
     raise "Pending: #{message}"
   end
+
   context "A FauxObject" do
     setup do
       DataMapper.auto_migrate!
       @faux = FauxObject.new
+    end
+
+    context "with embedded objects" do
+      setup do
+        @embedded_other = FauxObject.create
+        
+        @embedded_object = EmbeddedObject.new
+        @embedded_object.name = "Embedded"
+        @embedded_object.record = @embedded_other
+        
+        @embedded_object.things << @embedded_other
+        @embedded_object.things << 33
+        @embedded_object.things << @embedded_other
+
+        @embedded_object.dictionary[@embedded_other] = 33
+      end
+            
+      should "embed objects in attributes" do
+        @faux.record = @embedded_object
+        checkpoint!
+        assert_equal @embedded_object, @faux.record
+        
+        embedded_object = @faux.record
+        
+        assert_equal "Embedded", embedded_object.name
+        assert_equal @embedded_other, embedded_object.record
+        assert_same_elements [@embedded_other, 33, @embedded_other], embedded_object.things.all
+        assert_equal 33, embedded_object.dictionary[@embedded_other]
+      end
+      
+      should "embed objects in maps" do
+        @faux.dictionary[@embedded_object] = :embedded
+        checkpoint!
+        assert_same_elements [@embedded_object], @faux.dictionary.keys
+        assert_equal :embedded, @faux.dictionary[@embedded_object]
+        
+        embedded_object = @faux.dictionary.keys.first
+        
+        assert_equal "Embedded", embedded_object.name
+        assert_equal @embedded_other, embedded_object.record
+        assert_same_elements [@embedded_other, 33, @embedded_other], embedded_object.things.all
+        assert_equal 33, embedded_object.dictionary[@embedded_other]
+      end
+      
+      should "embed objects in lists" do
+        @faux.things << @embedded_object
+        checkpoint!
+        raise @faux.attribute_get(:fauxsql_attributes).inspect
+        assert_same_elements [@embedded_object], @faux.things.all
+
+        embedded_object = @faux.things.first
+        
+        assert_equal "Embedded", embedded_object.name
+        assert_equal @embedded_other, embedded_object.record
+        assert_same_elements [@embedded_other, 33, @embedded_other], embedded_object.things.all
+        assert_equal 33, embedded_object.dictionary[@embedded_other]
+      end
     end
     
     should "have reflection for fauxsql maps" do
@@ -323,13 +392,13 @@ class TestFauxsql < Test::Unit::TestCase
     end
     
     should "obey typecasting directives for list items" do
-      pending "hove no need for this currently"
+      pending "have no need for this currently"
     end
     
     context "with :nested => *" do
       
       should "allow reflection on nested classes" do
-        assert_same_elements [FauxObject, RequiringField, Symbol, SimpleKey], @faux.fauxsql_nested_classes(:things)
+        assert_same_elements [FauxObject, RequiringField, Symbol, SimpleKey, EmbeddedObject], @faux.fauxsql_nested_classes(:things)
       end
       
       should "allow reflection on nested classes when there are none" do
