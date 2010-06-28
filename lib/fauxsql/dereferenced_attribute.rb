@@ -17,7 +17,7 @@ module Fauxsql
     # RawMarker = "raw".freeze
     RefMarker = "ref".freeze
     
-    @@identity_map = {}
+    @@_identity_map = {}
     def initialize(attribute)
       raise DereferencingIllegalAttribute.new(attribute) if attribute.key.nil?
       @klass      = attribute.class.to_s
@@ -34,7 +34,7 @@ module Fauxsql
     alias hash dump
     
     def self.get(attribute)
-      @@identity_map[attribute] ||= new(attribute)
+      @@_identity_map[attribute] ||= new(attribute)
     end
     
     def self.load(dump)
