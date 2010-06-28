@@ -106,7 +106,6 @@ class TestFauxsql < Test::Unit::TestCase
       should "embed objects in lists" do
         @faux.things << @embedded_object
         checkpoint!
-        raise @faux.attribute_get(:fauxsql_attributes).inspect
         assert_same_elements [@embedded_object], @faux.things.all
 
         embedded_object = @faux.things.first
