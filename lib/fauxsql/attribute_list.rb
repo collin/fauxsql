@@ -10,6 +10,10 @@ module Fauxsql
       Fauxsql.resolve_fauxsql_attribute super(index)
     end
 
+    def include?(an_item)
+      detect { |item| Fauxsql.resolve_fauxsql_attribute(item) == item }
+    end
+
     def first
       self[0]
     end
@@ -19,7 +23,7 @@ module Fauxsql
     end
 
     def all
-      map{|item| Fauxsql.resolve_fauxsql_attribute item }
+      map{ |item| Fauxsql.resolve_fauxsql_attribute item }
     end
 
     def equals list
@@ -34,9 +38,14 @@ module Fauxsql
       super{|item, index| yield(Fauxsql.resolve_fauxsql_attribute(item), index) }
     end
 
-    def -(others)
-      others = others.map{|other| Fauxsql.dereference_fauxsql_attribute(other).hash }
-      reject!{|one| others.include?(one.hash) }
+    def delete(item)
+      real_item = Fauxsql.dereference_fauxsql_attribute(item)
+      super(real_item)
+    end
+
+    def -(items)
+      items = items.map{|other| Fauxsql.dereference_fauxsql_attribute(other).hash }
+      reject!{|one| items.include?(one.hash) }
       self
     end
 

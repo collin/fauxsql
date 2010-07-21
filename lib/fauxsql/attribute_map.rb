@@ -33,9 +33,11 @@ module Fauxsql
         yield(resolve_key(key), resolve_value(value))
       end
     end
-    
-    # VERY VERY SPECIFIC to the marshal dump format.
-    # Probably brittle.
+
+    def include?(key)
+      !(self[key]).nil?
+    end
+
     def keys
       super.map do |key|
         resolve_key(key)
@@ -43,7 +45,7 @@ module Fauxsql
     end
         
     def resolve_key(key)
-      if key.respond_to?(:match) && key.match(/^.+Fauxsql::DereferencedAttribute.+@lookup_key.+$/)
+      if Fauxsql::DereferencedAttribute.is_dump?(key)
         Fauxsql.resolve_fauxsql_attribute Fauxsql::DereferencedAttribute.load(key)
       else
         key

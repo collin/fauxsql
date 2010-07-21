@@ -19,38 +19,152 @@ class RequiringField
   property :name, String, :required => true
 end
 
+class EmbeddedObject
+  include Fauxsql::Embedded
+  
+  attribute :name
+  attribute :record
+  
+  list :things
+  
+  map :dictionary
+end
+
 class FauxObject
   include DataMapper::Resource
-  include Fauxsql
+  include Fauxsql::DataMapper
   
   property :id, Serial
   property :type, Discriminator
   attribute :name
-  attribute :record, :nest => [FauxObject, String, Symbol]
+  attribute :record, :nest => [FauxObject, String, Symbol, EmbeddedObject]
   attribute :number, :type => :to_i
-  list :things, :nest => [FauxObject, RequiringField, Symbol, SimpleKey]
-  map :dictionary, :nest => [FauxObject, String, Symbol, SimpleKey]
+  list :things, :nest => [FauxObject, RequiringField, Symbol, SimpleKey, EmbeddedObject]
+  map :dictionary, :nest => [FauxObject, String, Symbol, SimpleKey, EmbeddedObject]
   map :numbers, :value_type => :to_i
   
   manymany :others, :nest => [FauxObject], :through => :others#, :nest => true TODO implement nesting on manymany
 end
 
-class OtherFauxObject < FauxObject; end
+class OtherFauxObject < FauxObject
+  list :childs_things
+end
 
 class TestFauxsql < Test::Unit::TestCase
+  def pending(message)
+    raise "Pending: #{message}"
+  end
+
   context "A FauxObject" do
     setup do
       DataMapper.auto_migrate!
       @faux = FauxObject.new
     end
+
+    context "with embedded objects" do
+      setup do
+        @embedded_other = FauxObject.create
+        
+        @embedded_object = EmbeddedObject.new
+        @embedded_object.name = "Embedded"
+        @embedded_object.record = @embedded_other
+        
+        @embedded_object.things << @embedded_other
+        @embedded_object.things << 33
+        @embedded_object.things << @embedded_other
+
+        @embedded_object.dictionary[@embedded_other] = 33
+      end
+            
+      should "embed objects in attributes" do
+        @faux.record = @embedded_object
+        checkpoint!
+        assert_equal @embedded_object, @faux.record
+        
+        embedded_object = @faux.record
+        
+        assert_equal "Embedded", embedded_object.name
+        assert_equal @embedded_other, embedded_object.record
+        assert_same_elements [@embedded_other, 33, @embedded_other], embedded_object.things.all
+        assert_equal 33, embedded_object.dictionary[@embedded_other]
+      end
+      
+      should "embed objects in maps" do
+        @faux.dictionary[@embedded_object] = :embedded
+        checkpoint!
+        assert_same_elements [@embedded_object], @faux.dictionary.keys
+        assert_equal :embedded, @faux.dictionary[@embedded_object]
+        
+        embedded_object = @faux.dictionary.keys.first
+        
+        assert_equal "Embedded", embedded_object.name
+        assert_equal @embedded_other, embedded_object.record
+        assert_same_elements [@embedded_other, 33, @embedded_other], embedded_object.things.all
+        assert_equal 33, embedded_object.dictionary[@embedded_other]
+      end
+      
+      should "embed objects in lists" do
+        @faux.things << @embedded_object
+        checkpoint!
+        assert_same_elements [@embedded_object], @faux.things.all
+
+        embedded_object = @faux.things.first
+        
+        assert_equal "Embedded", embedded_object.name
+        assert_equal @embedded_other, embedded_object.record
+        assert_same_elements [@embedded_other, 33, @embedded_other], embedded_object.things.all
+        assert_equal 33, embedded_object.dictionary[@embedded_other]
+      end
+    end
+    
+    should "have reflection for fauxsql maps" do
+      assert_same_elements [:dictionary, :numbers], FauxObject.fauxsql_attribute_names(:map)
+    end
+    
+    should "have reflection for fauxsql manymanys" do
+      assert_same_elements [:others], FauxObject.fauxsql_attribute_names(:manymany)      
+    end
+    
+    should "have reflection for fauxsql lists" do
+      assert_same_elements [:things], FauxObject.fauxsql_attribute_names(:list)
+    end
     
     should "have reflection for fauxsql attributes" do
+      assert_same_elements [:name, :record, :number], FauxObject.fauxsql_attribute_names(:attribute)
+    end
+        
+    should "reflect all attributes" do
+      assert_same_elements [:name, :record, :number, :things, :others, :dictionary, :numbers], FauxObject.fauxsql_attribute_names
+    end
+    
+    should "mix reflections" do
+      assert_same_elements [:things, :name, :record, :number], FauxObject.fauxsql_attribute_names(:list, :attribute)
+    end
+    
+    should "have reflection for attributes of specific types on a single record" do
+      @faux.things << :one
+      @faux.things << :two
+      @faux.numbers[:a] = 1
+      @faux.numbers[:b] = 1
+
+      assert_same_elements [:things, :numbers, :dictionary], @faux.get_fauxsql_attributes(:map, :list).map(&:name)
+    end
+    
+    should "have reflection on all fauxsql attrs of indeterminate type" do
+      pending "Fails because :attribute type is NOT wrapped. TODO: wrap it"
+      # Fauxsql attributes are lazy. So to test this we need to load them all first. Othewise they do not exist when we call map
+      # @faux.get_fauxsql_attributes
+      # raise @faux.get_fauxsql_attributes.inspect
+      # assert_same_elements [:things, :dictionary, :numbers], @faux.get_fauxsql_attributes(:map, :list, :ma).map(&:name)
+    end
+    
+    should "have reflection for named fauxsql attributes" do
       assert FauxObject.has_fauxsql_attribute?(:name)
     end
     
     should "have reflection for fauxsql attributes by type" do
       assert FauxObject.has_fauxsql_attribute?(:things, :list)
-      assert not(FauxObject.has_fauxsql_attribute?(:things, :manymany))
+      assert !(FauxObject.has_fauxsql_attribute?(:things, :manymany))
     end
     
     should "have getters and setters for attributes" do
@@ -87,9 +201,31 @@ class TestFauxsql < Test::Unit::TestCase
       assert @faux.things == [:hello, :goodbye]
     end
     
+    should "delete items from lists" do
+      other = FauxObject.create
+      @faux.things << :hello
+      @faux.things << other
+      checkpoint!
+      @faux.things.delete(:hello)
+      checkpoint!
+      assert_same_elements [other], @faux.things.all      
+      @faux.things.delete(other)
+      assert_same_elements [], @faux.things.all
+    end
+     
     should "persist maps" do
       @faux.dictionary[:a] = 1
       @faux.dictionary[:b] = 2
+      checkpoint!
+      assert_equal 1, @faux.dictionary[:a]
+      assert_equal 2, @faux.dictionary[:b]
+    end
+
+    should "reset! maps" do
+      @faux.dictionary[:a] = 1
+      @faux.dictionary[:b] = 2
+      checkpoint!
+      @faux.dictionary.reset!
       checkpoint!
       assert_equal 1, @faux.dictionary[:a]
       assert_equal 2, @faux.dictionary[:b]
@@ -124,7 +260,16 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << simple
       @faux.things << :goodbye
       checkpoint!
-      assert_equal [:hello, simple, :goodbye], @faux.things.all
+      assert_same_elements [:hello, simple, :goodbye], @faux.things.all
+    end
+
+    should "reset! lists" do
+      has_fauxsql = OtherFauxObject.create
+      @faux.things << :hello
+      @faux.things << has_fauxsql
+      @faux.things << :goodbye
+      checkpoint!
+      assert_same_elements [:hello, has_fauxsql, :goodbye], @faux.things.all
     end
 
     should "derefencenc and resolve fauxsql objects in lists" do
@@ -133,7 +278,9 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.things << has_fauxsql
       @faux.things << :goodbye
       checkpoint!
-      assert_equal [:hello, has_fauxsql, :goodbye], @faux.things.all
+      @faux.things.reset!
+      checkpoint!
+      assert_same_elements [:hello, has_fauxsql, :goodbye], @faux.things.all
     end
 
     should "derefencenc and resolve fauxsql objects in lists when calling each/each_with_index" do
@@ -163,6 +310,20 @@ class TestFauxsql < Test::Unit::TestCase
       assert_equal SimpleKey, @faux.dictionary.keys.first.class
       checkpoint!
       assert_equal simple2, @faux.dictionary[simple1]
+    end
+    
+    should "detect inclusion of items in lists" do
+      other = FauxObject.create
+      @faux.things << other
+      checkpoint!
+      assert @faux.things.include?(other)
+    end
+    
+    should "detect inclusion of items in maps" do
+      other = FauxObject.create
+      @faux.dictionary[other] = "anything"
+      checkpoint!
+      assert @faux.dictionary.include?(other)
     end
     
     should "give records as keys/values when calling #each" do
@@ -201,7 +362,7 @@ class TestFauxsql < Test::Unit::TestCase
       checkpoint!
       @faux.things.clear
       checkpoint!
-      assert_equal [], @faux.things.all
+      assert_same_elements [], @faux.things.all
     end
   
     should "delete items from maps" do
@@ -226,21 +387,21 @@ class TestFauxsql < Test::Unit::TestCase
     end
     
     should "obey typecasting directives for map keys" do
-      assert false
+      pending "have no need for this currently"
     end
     
     should "obey typecasting directives for list items" do
-      assert false
+      pending "have no need for this currently"
     end
     
     context "with :nested => *" do
       
       should "allow reflection on nested classes" do
-        assert_equal [FauxObject, RequiringField, Symbol, SimpleKey], @faux.fauxsql_nested_classes(:things)
+        assert_same_elements [FauxObject, RequiringField, Symbol, SimpleKey, EmbeddedObject], @faux.fauxsql_nested_classes(:things)
       end
       
       should "allow reflection on nested classes when there are none" do
-        assert_equal [], @faux.fauxsql_nested_classes(:number)
+        assert_same_elements [], @faux.fauxsql_nested_classes(:number)
       end
       
       should "agree that subclasses are valid nestable classes" do
@@ -259,6 +420,25 @@ class TestFauxsql < Test::Unit::TestCase
           assert_equal "Nested", @faux.dictionary[other]
         end
         
+        should "update nested attributes" do
+          other = FauxObject.create
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            :id => other.id,
+            :value => "Nested"
+          }}
+          checkpoint!
+          assert_equal "Nested", @faux.dictionary[other]
+          @faux.dictionary = { "0" => {
+            :type => other.class.name,
+            :id => other.id,
+            :value => "WOAH"
+          }}
+          checkpoint!
+          assert_equal "WOAH", @faux.dictionary[other]
+          assert_equal 1, @faux.dictionary.size
+        end
+        
         should "delete nested attributes" do
           other = FauxObject.create
           @faux.dictionary = { "0" => {
@@ -273,7 +453,7 @@ class TestFauxsql < Test::Unit::TestCase
             :_delete => true
           }}
           checkpoint!
-          assert_equal [], @faux.dictionary.keys
+          assert_same_elements [], @faux.dictionary.keys
         end
       end
 
@@ -285,7 +465,7 @@ class TestFauxsql < Test::Unit::TestCase
             :id => other.id
           }}
           checkpoint!
-          assert_equal [other], @faux.things.all
+          assert_same_elements [other], @faux.things.all
         end
         
         should  "create new records when there is no id" do
@@ -303,10 +483,10 @@ class TestFauxsql < Test::Unit::TestCase
             :type => RequiringField.name
           }}
           checkpoint!
-          assert not(@faux.things.empty?)
+          assert !(@faux.things.empty?)
           bad_thing = @faux.things.first
           assert bad_thing.new?
-          assert not(@faux.valid?)
+          assert !(@faux.valid?)
           assert bad_thing.errors.on(:name).any?
         end
         
@@ -342,13 +522,13 @@ class TestFauxsql < Test::Unit::TestCase
             :_delete => true
           }}
           checkpoint!
-          assert_equal [], @faux.things.all
+          assert_same_elements [], @faux.things.all
         end        
       end
       
       context "on an attribute" do
         should "accept nested attribute" do
-        assert false
+        pending "have no need for this currently"
         #   other = FauxObject.create
         #   @faux.record = {
         #     :type => other.class.name,
@@ -359,7 +539,7 @@ class TestFauxsql < Test::Unit::TestCase
         end
         
         should "delete nested attribute" do
-          assert false
+          pending "have no need for this currently"
           # other = FauxObject.create
           # @faux.record = {
           #   :type => other.class.name,
@@ -387,8 +567,8 @@ class TestFauxsql < Test::Unit::TestCase
       end
       
       should "associate manymany relationships" do
-        assert_equal [@faux], @other.others.all # LOL "LOST" JOKE
-        assert_equal [@other], @faux.others.all
+        assert_same_elements [@faux], @other.others.all # LOL "LOST" JOKE
+        assert_same_elements [@other], @faux.others.all
       end
     
       should "delete from manymany relationships" do
@@ -398,15 +578,11 @@ class TestFauxsql < Test::Unit::TestCase
         @faux.others.delete(@other)
         checkpoint!
         third.save; third.reload
-        assert_equal [third], @faux.others.all
-        assert_equal [], @other.others.all
+        assert_same_elements [third], @faux.others.all
+        assert_same_elements [], @other.others.all
       end
       
       # TODO think about paranoid deletion
-    end
-    
-    should "allow changing of hash key when key is record" do
-      assert false
     end
     
     should "return keys for dictionary stores" do
@@ -414,7 +590,7 @@ class TestFauxsql < Test::Unit::TestCase
       @faux.dictionary['b'] = 1
       @faux.dictionary['c'] = 1
       checkpoint!
-      assert_equal ['a', 'b', 'c'], @faux.dictionary.keys
+      assert_same_elements ['a', 'b', 'c'], @faux.dictionary.keys
     end
   end
 end

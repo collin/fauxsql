@@ -27,6 +27,7 @@ module Fauxsql
     end
 
     def get_nested_record(vals)
+      # todo: raise specific error when :id and :type are nil
       model = vals[:type].constantize
       assert_valid_nested_class!(model)
       model.get(vals[:id])
@@ -38,6 +39,10 @@ module Fauxsql
       raise InvalidNesting.new(record, name, options[:attribute_type], model, options[:nest])
     end
 
+    def reset!
+      raise "Unimplemented method Fauxsql::AttributeWrapper#reset! Implement it in subclass #{self.class}"      
+    end
+    
     def dirty!
       Fauxsql.dirty!(record){ yield }
     end

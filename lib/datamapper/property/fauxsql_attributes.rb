@@ -8,7 +8,6 @@ module DataMapper
       end
       
       def load(value)
-        raise "HELL #{value}"
         case value
           when ::String
             Marshal.load(value.unpack("m").first)

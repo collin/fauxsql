@@ -1,6 +1,7 @@
 # Libs
 require 'active_support/concern'
 require 'active_support/core_ext/class/attribute_accessors'
+require 'active_support/memoizable'
 require 'dm-core'
 require 'pathname'
 
@@ -17,11 +18,15 @@ require root+'fauxsql/map_wrapper'
 require root+'fauxsql/list_wrapper'
 require root+'fauxsql/manymany_wrapper'
 require root+'fauxsql/dsl'
+require root+'fauxsql/data_mapper'
+require root+'fauxsql/embedded'
 
 # require root+'datamapper/property/fauxsql_attributes'
 
 module Fauxsql
   extend ActiveSupport::Concern
+  
+  AttributeTypes = [:attribute, :list, :map, :manymany].freeze
   
   class NoFauxsqlAttribute < ArgumentError
     def initialize(attribute_name, attribute_names)
@@ -30,15 +35,22 @@ module Fauxsql
   end
   
   included do
-    # Benchmark shows performance is up to 5x slower when accessing fauxsql attributes lazily.
-    property :fauxsql_attributes, Object, 
-      :default => lambda{|*| Fauxsql::Attributes.new },
-      :lazy => false
     extend Fauxsql::DSL
-    cattr_accessor :fauxsql_options
+    # TODO: determine if extlib_inheritable_accessor or class_inheritable_accessor should be used.
+    # class_inheritable_accessor does not really work :(
+    extlib_inheritable_accessor :fauxsql_options
     self.fauxsql_options = Fauxsql::Options.new
+  end
+  
+  def get_fauxsql_attributes(*types)
+    hits = []
+    types = Fauxsql::AttributeTypes if types.empty?
     
-    validates_with_method :fauxsql_collect_nested_errors
+    fauxsql_options.each do |key, options|
+      hits << send(key) if types.include?(options[:attribute_type])
+    end
+    
+    hits.compact
   end
   
   # Getter method for attributes defined as:
@@ -59,7 +71,7 @@ module Fauxsql
       get_fauxsql_manymany(attribute_name)
     end
   end
-
+  
   # Setter method for attributes defined as:
   #   attribute :attribute_name
   def set_fauxsql_attribute(attribute_name, value)
@@ -95,7 +107,7 @@ module Fauxsql
   # This way we can control how certain classes are serialized by Fauxsql
   # See #resolve_fauxsql_attribute to see how attributes are read.
   def self.dereference_fauxsql_attribute(attribute)
-    if attribute.is_a?(DataMapper::Resource) and attribute.valid?
+    if attribute.is_a?(::DataMapper::Resource) and attribute.valid?
       attribute.new? ? attribute : DereferencedAttribute.get(attribute)
     else
       attribute
@@ -115,6 +127,7 @@ module Fauxsql
   
   def fauxsql_collect_nested_errors
     # bail out if we have no fauxsql_attributes
+    return true if fauxsql_attributes.nil?
     return true unless fauxsql_attributes.any?
     
     # calls to attribute.collect_nested_errors will return true if there arent errors. 
