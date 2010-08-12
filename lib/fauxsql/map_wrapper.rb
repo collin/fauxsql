@@ -2,7 +2,8 @@ require "active_support/core_ext/module/delegation"
 module Fauxsql
   class MapWrapper < AttributeWrapper
     alias map attribute
-    delegate :[], :each, :clear, :include?, :each_with_index, :size, :keys, :resolve_key, :resolve_value, :to => :map
+    delegate :[], :each, :clear, :include?, :each_with_index, :size, :keys, 
+             :inject, :resolve_key, :resolve_value, :to => :map
     
     def []=(key, value)
       assert_valid_nested_class!(key.class)
